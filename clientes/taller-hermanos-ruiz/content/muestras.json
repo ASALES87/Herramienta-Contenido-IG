@@ -1,0 +1,66 @@
+{
+ "_nota": "Textos de muestra para las imágenes de presentación. No se publican.",
+ "posts": [
+  {
+   "slides": [
+    {
+     "h": "Así lo hacemos",
+     "body": "Mecánica general y neumáticos en Torrent"
+    },
+    {
+     "h": "Por qué te importa",
+     "body": "Conductores de la zona"
+    }
+   ],
+   "fact": "Mecánica general y neumáticos en Torrent",
+   "cta": "¿Lo sabías?",
+   "caption": "",
+   "id": "m1",
+   "pillar": "P1",
+   "title": "Revisión pre-ITV"
+  },
+  {
+   "slides": [
+    {
+     "h": "Así lo hacemos",
+     "body": "Mecánica general y neumáticos en Torrent"
+    },
+    {
+     "h": "Por qué te importa",
+     "body": "Conductores de la zona"
+    }
+   ],
+   "fact": "Mecánica general y neumáticos en Torrent",
+   "cta": "¿Lo sabías?",
+   "caption": "",
+   "id": "m2",
+   "pillar": "P3",
+   "title": "Lo que nadie te cuenta: Revisión pre-ITV"
+  },
+  {
+   "slides": [
+    {
+     "h": "Así lo hacemos",
+     "body": "Mecánica general y neumáticos en Torrent"
+    },
+    {
+     "h": "Por qué te importa",
+     "body": "Conductores de la zona"
+    }
+   ],
+   "fact": "Mecánica general y neumáticos en Torrent",
+   "cta": "¿Lo sabías?",
+   "caption": "",
+   "id": "m3",
+   "pillar": "P2",
+   "title": "Cambio de neumáticos"
+  },
+  {
+   "id": "m4",
+   "pillar": "P7",
+   "title": "¿Qué te gustaría que te contáramos por aquí?",
+   "cta": "Cuéntanoslo por mensaje",
+   "caption": ""
+  }
+ ]
+}

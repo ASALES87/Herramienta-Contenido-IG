@@ -1,0 +1,177 @@
+{
+ "r-t2610-01": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-01": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "r-t2610-03": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-02": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "acento"
+ },
+ "t2610-03": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-04": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "t2610-05": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "r-t2610-07": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "acento"
+ },
+ "t2610-07": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "r-t2610-11": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "t2610-08": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-11": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "acento"
+ },
+ "t2610-09": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-14": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "r-t2610-12": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-12": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "acento"
+ },
+ "r-t2610-16": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-10": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "t2610-16": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-15": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "acento"
+ },
+ "t2610-17": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "r-t2610-18": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "t2610-18": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "r-t2610-23": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "acento"
+ },
+ "t2610-19": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-23": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "t2610-21": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-28": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "acento"
+ },
+ "r-t2610-24": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-24": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "r-t2610-26": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-22": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "acento"
+ },
+ "t2610-26": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "t2610-25": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "t2610-29": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ }
+}

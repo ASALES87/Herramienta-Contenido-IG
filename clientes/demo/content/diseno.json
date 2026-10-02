@@ -1,0 +1,47 @@
+{
+ "r-s01-1": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "s01-1": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "r-s01-3": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "s01-2": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "s01-3": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "s01-4": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "s01-5": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ },
+ "r-s01-6": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "principal"
+ },
+ "s01-6": {
+  "plantilla": "bloques",
+  "nivel": "ninguna",
+  "tono": "fondo"
+ }
+}

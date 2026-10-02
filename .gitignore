@@ -1,0 +1,10 @@
+.env
+*.env
+__pycache__/
+clientes/*/media/
+clientes/*/.env
+sincronizar.log
+clientes/*/biblioteca/*.jpg
+clientes/*/biblioteca/*.jpeg
+clientes/*/biblioteca/*.png
+clientes/*/alta/

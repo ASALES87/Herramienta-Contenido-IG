@@ -1,0 +1,85 @@
+name: Publicar en Instagram (todos los clientes)
+
+# Se lanza a las horas de publicación de los clientes (hora de Madrid, en UTC con verano/invierno) y publica
+# lo que ya ha llegado a su hora: como mucho 1 publicación por cliente y pasada; lo demás sale en la siguiente.
+# Solo publica clientes activos (plan.json → "activo": true) y nunca tandas pendientes de aprobación.
+# Las horas se regeneran con:  python motor/todos.py horarios --escribir   (lo hace alta.py al dar de alta)
+on:
+  schedule:
+    # >>> horarios (generado por motor/todos.py horarios; no editar a mano)
+    - cron: "5 6,7 * * *"   # 08:00 Madrid
+    - cron: "5 8,9 * * *"   # 10:00 Madrid
+    - cron: "5 10,11 * * *"   # 12:00 Madrid
+    - cron: "35 11,12 * * *"   # 13:30 Madrid
+    # <<< horarios
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "simular = no publica nada (incluye clientes de ensayo) · publicar_siguiente = publica YA la siguiente del cliente indicado"
+        type: choice
+        options: [simular, publicar_siguiente]
+        default: simular
+      cliente:
+        description: "id del cliente (vacío = todos; obligatorio para publicar_siguiente)"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: publicar-instagram
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SECRETOS: ${{ toJSON(secrets) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Instalar ffmpeg (solo si hay un reel a punto)
+        run: |
+          if [ "$(python motor/todos.py hay-reels)" = "si" ] || [ "${{ inputs.modo }}" = "publicar_siguiente" ]; then
+            command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+          fi
+
+      - name: Publicar lo que toca
+        run: |
+          if [ "${{ inputs.modo }}" = "simular" ]; then
+            python motor/todos.py publicar --simular ${{ inputs.cliente && format('--cliente {0}', inputs.cliente) || '' }}
+          elif [ "${{ inputs.modo }}" = "publicar_siguiente" ]; then
+            python motor/todos.py siguiente --cliente "${{ inputs.cliente }}"
+          else
+            python motor/todos.py publicar
+          fi
+
+      - name: Guardar registro (publicados, fotos y diseño decididos)
+        if: always()
+        run: |
+          git config user.name "contenido-bot"
+          git config user.email "contenido-bot@users.noreply.github.com"
+          for f in clientes/*/content/published.json clientes/*/content/videos_usados.json \
+                   clientes/*/content/fotos_asignadas.json clientes/*/content/diseno.json clientes/*/biblioteca/index.json; do
+            [ -f "$f" ] && git add "$f"
+          done
+          git diff --cached --quiet || (git commit -m "Publicado en Instagram [skip ci]" && git pull --rebase -q && git push)
+
+      - name: Avisar si ha fallado
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" \
+            --title "⚠️ Falló una publicación ($(TZ=Europe/Madrid date '+%d/%m %H:%M'))" \
+            --body "Detalle: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          Lo pendiente se reintenta en la siguiente franja. Cierra este aviso cuando esté resuelto."

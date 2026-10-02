@@ -1,0 +1,73 @@
+{
+ "id": "taller-hermanos-ruiz",
+ "nombre": "Taller Hermanos Ruiz",
+ "_nota": "Generado por alta.py el 02/10/2026 desde ficha_taller.json.",
+ "instagram": "tallerruiz",
+ "sector": "taller",
+ "colores": {
+  "principal": "#263238",
+  "fondo": "#F2F3F4",
+  "acento": "#E85D04",
+  "texto": "#16191C"
+ },
+ "fuentes": {
+  "titulo": "Quicksand.ttf",
+  "texto": "Poppins-Regular.ttf",
+  "texto_semi": "Poppins-SemiBold.ttf",
+  "peso_titulo": 700
+ },
+ "logo": null,
+ "logo_claro": null,
+ "logo_texto": "taller hermanos ruiz",
+ "logo_etiqueta": null,
+ "adorno": "puntos",
+ "pilares": {
+  "P1": "Lo que hacemos",
+  "P2": "Consejos útiles",
+  "P3": "Mitos y errores frecuentes",
+  "P4": "Equipo y día a día",
+  "P5": "Clientes y opiniones",
+  "P6": "Novedades y fechas clave",
+  "P7": "Tu turno"
+ },
+ "pilar_pregunta": "P7",
+ "destacadas": {
+  "P1": "Qué hacemos",
+  "P2": "Consejos",
+  "P3": "Mitos",
+  "P4": "Equipo",
+  "P5": "Clientes",
+  "P6": "Novedades",
+  "P7": "Tu turno"
+ },
+ "destacadas_sub": {
+  "Tu turno": "preguntas"
+ },
+ "textos": {},
+ "cta_por_defecto": "Llámanos",
+ "video_query_defecto": "mechanic workshop tools",
+ "idioma": "es-ES",
+ "tuteo": true,
+ "tono": [
+  "cercano"
+ ],
+ "emojis": "pocos",
+ "hashtags": "",
+ "contenido_propio": {
+  "fotos": "no",
+  "videos": "no",
+  "preferencia": "stock",
+  "fotos_nuevas": "no"
+ },
+ "aprobacion_tandas": true,
+ "media_host": "r2",
+ "email_avisos": "paco@tallerruiz.demo",
+ "plantillas": [
+  "bloques",
+  "tipografica"
+ ],
+ "fotos": {
+  "nivel": "auto",
+  "nivel_max": "ninguna"
+ }
+}

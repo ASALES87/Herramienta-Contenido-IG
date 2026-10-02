@@ -1,0 +1,173 @@
+{
+ "timezone": "Europe/Madrid",
+ "posts": [
+  {
+   "id": "r-s01-1",
+   "type": "reel",
+   "publish_at": "2026-10-03T12:00",
+   "files": [
+    "reels/r-s01-1.mp4"
+   ],
+   "caption": "Así nace una hogaza de masa madre 🍞\n\nNo hay truco: harina, agua, sal y tiempo. Mucho tiempo. La masa madre trabaja toda la noche para que por la mañana salga del horno una hogaza con corteza crujiente y miga tierna.\n\n¿Eres de corteza o de miga? 👇\n\n#MasaMadre #PanArtesano #Ruzafa #LaEspigaRuzafa"
+  },
+  {
+   "id": "s01-7",
+   "type": "story",
+   "publish_at": "2026-10-04T10:00",
+   "files": [
+    "stories/s01-7.jpg"
+   ],
+   "title": "¿Hogaza, barra o pan de molde?"
+  },
+  {
+   "id": "f-s01-1",
+   "type": "story",
+   "publish_at": "2026-10-05T08:00",
+   "files": [
+    "stories/f-s01-1.jpg"
+   ],
+   "title": "¿Sabías que…? · Así nace una hogaza de masa madre"
+  },
+  {
+   "id": "s01-1",
+   "type": "carousel",
+   "publish_at": "2026-10-05T13:30",
+   "files": [
+    "carousels/s01-1/01.jpg",
+    "carousels/s01-1/02.jpg",
+    "carousels/s01-1/03.jpg",
+    "carousels/s01-1/04.jpg",
+    "carousels/s01-1/05.jpg"
+   ],
+   "caption": "Así nace una hogaza de masa madre 🍞\n\nNo hay truco: harina, agua, sal y tiempo. Mucho tiempo. La masa madre trabaja toda la noche para que por la mañana salga del horno una hogaza con corteza crujiente y miga tierna.\n\n¿Eres de corteza o de miga? 👇\n\n#MasaMadre #PanArtesano #Ruzafa #LaEspigaRuzafa"
+  },
+  {
+   "id": "f-s01-2",
+   "type": "story",
+   "publish_at": "2026-10-06T08:00",
+   "files": [
+    "stories/f-s01-2.jpg"
+   ],
+   "title": "¿Sabías que…? · Mito: el pan congelado ya no es pan de verdad"
+  },
+  {
+   "id": "r-s01-3",
+   "type": "reel",
+   "publish_at": "2026-10-06T12:00",
+   "files": [
+    "reels/r-s01-3.mp4"
+   ],
+   "caption": "Cómo guardar el pan para que dure más 🧺\n\n1. Bolsa de tela o panera, nunca la nevera.\n2. Corte hacia abajo sobre la tabla.\n3. Si no lo vas a comer en 2 días, al congelador.\n\n#ConsejosDeCocina #PanArtesano #Ruzafa #LaEspigaRuzafa"
+  },
+  {
+   "id": "s01-2",
+   "type": "carousel",
+   "publish_at": "2026-10-06T13:30",
+   "files": [
+    "carousels/s01-2/01.jpg",
+    "carousels/s01-2/02.jpg",
+    "carousels/s01-2/03.jpg",
+    "carousels/s01-2/04.jpg",
+    "carousels/s01-2/05.jpg"
+   ],
+   "caption": "Mito: el pan congelado ya no es pan de verdad ❄️\n\nSi lo congelas el mismo día y bien cerrado, al descongelarlo vuelve casi como recién hecho. Unos minutos de horno y listo.\n\nLo que sí lo estropea: la nevera.\n\n#PanArtesano #TrucosDeCocina #Ruzafa #LaEspigaRuzafa"
+  },
+  {
+   "id": "f-s01-3",
+   "type": "story",
+   "publish_at": "2026-10-07T08:00",
+   "files": [
+    "stories/f-s01-3.jpg"
+   ],
+   "title": "¿Sabías que…? · Cómo guardar el pan para que dure más"
+  },
+  {
+   "id": "s01-3",
+   "type": "carousel",
+   "publish_at": "2026-10-07T13:30",
+   "files": [
+    "carousels/s01-3/01.jpg",
+    "carousels/s01-3/02.jpg",
+    "carousels/s01-3/03.jpg",
+    "carousels/s01-3/04.jpg",
+    "carousels/s01-3/05.jpg"
+   ],
+   "caption": "Cómo guardar el pan para que dure más 🧺\n\n1. Bolsa de tela o panera, nunca la nevera.\n2. Corte hacia abajo sobre la tabla.\n3. Si no lo vas a comer en 2 días, al congelador.\n\n#ConsejosDeCocina #PanArtesano #Ruzafa #LaEspigaRuzafa"
+  },
+  {
+   "id": "f-s01-4",
+   "type": "story",
+   "publish_at": "2026-10-08T08:00",
+   "files": [
+    "stories/f-s01-4.jpg"
+   ],
+   "title": "¿Sabías que…? · Lo que pasa en el obrador a las 4 de la mañana"
+  },
+  {
+   "id": "s01-4",
+   "type": "carousel",
+   "publish_at": "2026-10-08T13:30",
+   "files": [
+    "carousels/s01-4/01.jpg",
+    "carousels/s01-4/02.jpg",
+    "carousels/s01-4/03.jpg",
+    "carousels/s01-4/04.jpg",
+    "carousels/s01-4/05.jpg"
+   ],
+   "caption": "Lo que pasa en el obrador a las 4 de la mañana 🌙\n\nMientras el barrio duerme, el horno ya está encendido. A las 7 abrimos con todo recién hecho.\n\n¿A qué hora vienes tú a por el pan?\n\n#Obrador #PanArtesano #Ruzafa #LaEspigaRuzafa"
+  },
+  {
+   "id": "f-s01-5",
+   "type": "story",
+   "publish_at": "2026-10-09T08:00",
+   "files": [
+    "stories/f-s01-5.jpg"
+   ],
+   "title": "¿Sabías que…? · ¿Integral o «con harina integral»? No es lo mismo"
+  },
+  {
+   "id": "s01-5",
+   "type": "carousel",
+   "publish_at": "2026-10-09T13:30",
+   "files": [
+    "carousels/s01-5/01.jpg",
+    "carousels/s01-5/02.jpg",
+    "carousels/s01-5/03.jpg",
+    "carousels/s01-5/04.jpg",
+    "carousels/s01-5/05.jpg"
+   ],
+   "caption": "¿Integral o «con harina integral»? No es lo mismo 🌾\n\nDesde 2019, en España solo es «pan integral» el que está hecho con un 100 % de harina integral. Si lleva menos, la etiqueta debe decir cuánto.\n\n#PanIntegral #PanArtesano #Ruzafa #LaEspigaRuzafa"
+  },
+  {
+   "id": "r-s01-6",
+   "type": "reel",
+   "publish_at": "2026-10-10T12:00",
+   "files": [
+    "reels/r-s01-6.mp4"
+   ],
+   "caption": "La coca de llanda de los domingos 🍰\n\nSábado y domingo, recién hecha y por porciones. Si la quieres entera, escríbenos por WhatsApp antes del viernes.\n\n#CocaDeLlanda #Valencia #Ruzafa #LaEspigaRuzafa"
+  },
+  {
+   "id": "f-s01-6",
+   "type": "story",
+   "publish_at": "2026-10-12T08:00",
+   "files": [
+    "stories/f-s01-6.jpg"
+   ],
+   "title": "¿Sabías que…? · La coca de llanda de los domingos"
+  },
+  {
+   "id": "s01-6",
+   "type": "carousel",
+   "publish_at": "2026-10-12T13:30",
+   "files": [
+    "carousels/s01-6/01.jpg",
+    "carousels/s01-6/02.jpg",
+    "carousels/s01-6/03.jpg",
+    "carousels/s01-6/04.jpg",
+    "carousels/s01-6/05.jpg"
+   ],
+   "caption": "La coca de llanda de los domingos 🍰\n\nSábado y domingo, recién hecha y por porciones. Si la quieres entera, escríbenos por WhatsApp antes del viernes.\n\n#CocaDeLlanda #Valencia #Ruzafa #LaEspigaRuzafa"
+  }
+ ]
+}

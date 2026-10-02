@@ -1,0 +1,81 @@
+{
+ "id": "demo",
+ "nombre": "Panadería La Espiga",
+ "_nota": "Cliente FICTICIO para pruebas del motor. No existe.",
+ "instagram": "laespiga.demo",
+ "sector": "restauracion",
+ "colores": {
+  "principal": "#7A3B1F",
+  "fondo": "#FBF4EC",
+  "acento": "#D9822B",
+  "texto": "#2A1E17"
+ },
+ "fuentes": {
+  "titulo": "Quicksand.ttf",
+  "texto": "Poppins-Regular.ttf",
+  "texto_semi": "Poppins-SemiBold.ttf",
+  "peso_titulo": 700
+ },
+ "logo": null,
+ "logo_claro": null,
+ "logo_texto": "la espiga",
+ "logo_etiqueta": null,
+ "adorno": "puntos",
+ "pilares": {
+  "P1": "Nuestro pan",
+  "P2": "Detrás del obrador",
+  "P3": "Mitos del pan",
+  "P4": "Consejos de casa",
+  "P5": "Producto y proveedores",
+  "P6": "El barrio",
+  "P7": "Tu turno"
+ },
+ "pilar_pregunta": "P7",
+ "destacadas": {
+  "P1": "Nuestro pan",
+  "P2": "Obrador",
+  "P3": "Mitos",
+  "P4": "Consejos",
+  "P5": "Obrador",
+  "P6": "Barrio",
+  "P7": "Tu turno"
+ },
+ "destacadas_sub": {
+  "Nuestro pan": "la carta",
+  "Obrador": "cómo trabajamos",
+  "Mitos": "y realidades",
+  "Consejos": "en casa",
+  "Barrio": "Ruzafa",
+  "Tu turno": "preguntas"
+ },
+ "textos": {
+  "cta_sub": "Guárdalo y compártelo con quien siempre compra el pan."
+ },
+ "cta_por_defecto": "Escríbenos por WhatsApp",
+ "video_query_defecto": "artisan bakery bread",
+ "idioma": "es-ES",
+ "tuteo": true,
+ "tono": [
+  "cercano",
+  "divertido"
+ ],
+ "emojis": "pocos",
+ "hashtags": "#LaEspigaRuzafa",
+ "contenido_propio": {
+  "fotos": "algunas",
+  "videos": "alguno",
+  "preferencia": "mezcla",
+  "fotos_nuevas": "semana"
+ },
+ "aprobacion_tandas": true,
+ "media_host": "simulado",
+ "email_avisos": "marta@laespiga.demo",
+ "plantillas": [
+  "foto_franja",
+  "bloques"
+ ],
+ "fotos": {
+  "nivel": "auto",
+  "nivel_max": "muchas"
+ }
+}

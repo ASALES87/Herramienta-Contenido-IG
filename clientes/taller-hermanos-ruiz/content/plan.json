@@ -1,0 +1,48 @@
+{
+ "_nota": "Ritmo de publicación (hora de Madrid). planificar.py lo aplica a las tandas nuevas. Plan Estándar.",
+ "activo": false,
+ "ritmo": "basico",
+ "carrusel": {
+  "dias": [
+   "lunes",
+   "miercoles",
+   "viernes"
+  ],
+  "hora": "13:30"
+ },
+ "dato": {
+  "hora": "08:00"
+ },
+ "pregunta": {
+  "activo": true,
+  "dia": "domingo",
+  "hora": "10:00"
+ },
+ "reels": {
+  "activo": true,
+  "dias": [
+   "jueves"
+  ],
+  "hora": "12:00",
+  "pilares": [
+   "P1",
+   "P2",
+   "P4"
+  ]
+ },
+ "tanda": {
+  "dias_minimos_por_delante": 21,
+  "dias_por_tanda": 35
+ },
+ "aprobacion": "primera",
+ "mosaico": {
+  "activo": true,
+  "secuencia": [
+   "principal",
+   "fondo",
+   "principal",
+   "acento"
+  ],
+  "desfase": 0
+ }
+}

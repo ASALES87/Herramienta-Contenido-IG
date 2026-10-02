@@ -1,0 +1,74 @@
+{
+ "id": "clinica-fisio-mar",
+ "nombre": "Clínica Fisio Mar",
+ "_nota": "Generado por alta.py el 02/10/2026 desde ficha_fisio.json.",
+ "instagram": "fisiomar.demo",
+ "sector": "salud",
+ "colores": {
+  "principal": "#304848",
+  "fondo": "#F4F8F8",
+  "acento": "#F0A848",
+  "texto": "#1D2B2B"
+ },
+ "fuentes": {
+  "titulo": "Quicksand.ttf",
+  "texto": "Poppins-Regular.ttf",
+  "texto_semi": "Poppins-SemiBold.ttf",
+  "peso_titulo": 700
+ },
+ "logo": "assets/logo.png",
+ "logo_claro": "assets/logo_claro.png",
+ "logo_texto": "clínica fisio mar",
+ "logo_etiqueta": null,
+ "adorno": "puntos",
+ "pilares": {
+  "P1": "Tratamientos y servicios",
+  "P2": "Consejos de prevención",
+  "P3": "Mitos y errores frecuentes",
+  "P4": "El equipo",
+  "P5": "Preguntas frecuentes",
+  "P6": "Novedades del centro",
+  "P7": "Tu turno"
+ },
+ "pilar_pregunta": "P7",
+ "destacadas": {
+  "P1": "Servicios",
+  "P2": "Consejos",
+  "P3": "Mitos",
+  "P4": "Equipo",
+  "P5": "Dudas",
+  "P6": "Novedades",
+  "P7": "Tu turno"
+ },
+ "destacadas_sub": {
+  "Tu turno": "preguntas"
+ },
+ "textos": {},
+ "cta_por_defecto": "Reserva tu cita",
+ "video_query_defecto": "clinic friendly professional",
+ "idioma": "es-ES",
+ "tuteo": true,
+ "tono": [
+  "profesional",
+  "cercano"
+ ],
+ "emojis": "pocos",
+ "hashtags": "",
+ "contenido_propio": {
+  "fotos": "muchas",
+  "videos": "si",
+  "preferencia": "propias",
+  "fotos_nuevas": "semana"
+ },
+ "aprobacion_tandas": true,
+ "media_host": "r2",
+ "email_avisos": "laura@fisiomar.demo",
+ "plantillas": [
+  "foto_completa",
+  "tipografica"
+ ],
+ "fotos": {
+  "nivel": "auto",
+  "nivel_max": "muchas"
+ }
+}

@@ -1,0 +1,53 @@
+{
+ "_nota": "Ritmo de publicación. Cambia aquí cuántas cosas salen y cuándo (hora de Madrid). planificar.py lo aplica a las tandas nuevas.",
+ "carrusel": {
+  "dias": [
+   "lunes",
+   "martes",
+   "miercoles",
+   "jueves",
+   "viernes",
+   "sabado",
+   "domingo"
+  ],
+  "hora": "20:30"
+ },
+ "dato": {
+  "hora": "10:00"
+ },
+ "tu_turno": {
+  "activo": true,
+  "dia": "domingo",
+  "hora": "11:00"
+ },
+ "reels": {
+  "activo": true,
+  "dias": [
+   "martes",
+   "domingo"
+  ],
+  "hora": "13:00",
+  "pilares": [
+   "P1",
+   "P3",
+   "P4",
+   "P7"
+  ]
+ },
+ "tanda": {
+  "dias_minimos_por_delante": 21,
+  "dias_por_tanda": 35
+ },
+ "mosaico": {
+  "activo": true,
+  "secuencia": [
+   "verde",
+   "crema",
+   "verde",
+   "mostaza"
+  ],
+  "desfase": 0,
+  "_nota": "Colores de portada en orden de publicación (verde, crema, mostaza). Con 3 columnas, esta secuencia hace un tablero en el que ninguna portada toca otra de su color. Si publicas algo a mano en el feed, suma 1 a desfase para recolocar."
+ },
+ "activo": false
+}

@@ -1,0 +1,45 @@
+{
+ "id": "",
+ "nombre": "",
+ "_nota": "Plantilla: alta.py la copia y la rellena con las respuestas del cuestionario.",
+ "instagram": "",
+ "sector": "",
+ "colores": {
+  "principal": "",
+  "fondo": "",
+  "acento": "",
+  "texto": ""
+ },
+ "fuentes": {
+  "titulo": "Quicksand.ttf",
+  "texto": "Poppins-Regular.ttf",
+  "texto_semi": "Poppins-SemiBold.ttf",
+  "peso_titulo": 700
+ },
+ "logo": null,
+ "logo_claro": null,
+ "logo_texto": "",
+ "logo_etiqueta": null,
+ "adorno": "puntos",
+ "pilares": {},
+ "pilar_pregunta": "",
+ "destacadas": {},
+ "destacadas_sub": {},
+ "textos": {},
+ "cta_por_defecto": "",
+ "video_query_defecto": "",
+ "idioma": "es-ES",
+ "tuteo": true,
+ "tono": [],
+ "emojis": "",
+ "hashtags": "",
+ "contenido_propio": {
+  "fotos": "no",
+  "videos": "no",
+  "preferencia": "stock",
+  "fotos_nuevas": "no"
+ },
+ "aprobacion_tandas": true,
+ "media_host": "r2",
+ "email_avisos": ""
+}

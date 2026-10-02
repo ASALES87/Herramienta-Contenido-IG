@@ -1,0 +1,66 @@
+{
+ "_nota": "Textos de muestra para las imágenes de presentación. No se publican.",
+ "posts": [
+  {
+   "slides": [
+    {
+     "h": "Así lo hacemos",
+     "body": "Sesiones de 50 minutos, siempre con el mismo fisio"
+    },
+    {
+     "h": "Por qué te importa",
+     "body": "Adultos activos de 30–60 años con dolor de espalda o lesiones deportivas"
+    }
+   ],
+   "fact": "Sesiones de 50 minutos, siempre con el mismo fisio",
+   "cta": "¿Lo sabías?",
+   "caption": "",
+   "id": "m1",
+   "pillar": "P1",
+   "title": "Fisioterapia deportiva"
+  },
+  {
+   "slides": [
+    {
+     "h": "Así lo hacemos",
+     "body": "Sesiones de 50 minutos, siempre con el mismo fisio"
+    },
+    {
+     "h": "Por qué te importa",
+     "body": "Adultos activos de 30–60 años con dolor de espalda o lesiones deportivas"
+    }
+   ],
+   "fact": "Sesiones de 50 minutos, siempre con el mismo fisio",
+   "cta": "¿Lo sabías?",
+   "caption": "",
+   "id": "m2",
+   "pillar": "P3",
+   "title": "Mito: si duele, no hay que moverse"
+  },
+  {
+   "slides": [
+    {
+     "h": "Así lo hacemos",
+     "body": "Sesiones de 50 minutos, siempre con el mismo fisio"
+    },
+    {
+     "h": "Por qué te importa",
+     "body": "Adultos activos de 30–60 años con dolor de espalda o lesiones deportivas"
+    }
+   ],
+   "fact": "Sesiones de 50 minutos, siempre con el mismo fisio",
+   "cta": "¿Lo sabías?",
+   "caption": "",
+   "id": "m3",
+   "pillar": "P2",
+   "title": "¿Cuántas sesiones necesito?"
+  },
+  {
+   "id": "m4",
+   "pillar": "P7",
+   "title": "¿Qué te gustaría que te contáramos por aquí?",
+   "cta": "Cuéntanoslo por mensaje",
+   "caption": ""
+  }
+ ]
+}

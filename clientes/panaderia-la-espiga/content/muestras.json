@@ -1,0 +1,66 @@
+{
+ "_nota": "Textos de muestra para las imágenes de presentación. No se publican.",
+ "posts": [
+  {
+   "slides": [
+    {
+     "h": "Así lo hacemos",
+     "body": "Fermentación de 24 h y harina ecológica de molinos valencianos"
+    },
+    {
+     "h": "Por qué te importa",
+     "body": "Familias del barrio de 30–45 años que buscan pan de calidad"
+    }
+   ],
+   "fact": "Fermentación de 24 h y harina ecológica de molinos valencianos",
+   "cta": "¿Lo sabías?",
+   "caption": "",
+   "id": "m1",
+   "pillar": "P1",
+   "title": "Hogaza de masa madre"
+  },
+  {
+   "slides": [
+    {
+     "h": "Así lo hacemos",
+     "body": "Fermentación de 24 h y harina ecológica de molinos valencianos"
+    },
+    {
+     "h": "Por qué te importa",
+     "body": "Familias del barrio de 30–45 años que buscan pan de calidad"
+    }
+   ],
+   "fact": "Fermentación de 24 h y harina ecológica de molinos valencianos",
+   "cta": "¿Lo sabías?",
+   "caption": "",
+   "id": "m2",
+   "pillar": "P3",
+   "title": "Mito: el pan engorda"
+  },
+  {
+   "slides": [
+    {
+     "h": "Así lo hacemos",
+     "body": "Fermentación de 24 h y harina ecológica de molinos valencianos"
+    },
+    {
+     "h": "Por qué te importa",
+     "body": "Familias del barrio de 30–45 años que buscan pan de calidad"
+    }
+   ],
+   "fact": "Fermentación de 24 h y harina ecológica de molinos valencianos",
+   "cta": "¿Lo sabías?",
+   "caption": "",
+   "id": "m3",
+   "pillar": "P2",
+   "title": "¿Tenéis pan sin gluten? ¿Hasta qué hora hay hogaza?"
+  },
+  {
+   "id": "m4",
+   "pillar": "P7",
+   "title": "¿Qué te gustaría que te contáramos por aquí?",
+   "cta": "Cuéntanoslo por mensaje",
+   "caption": ""
+  }
+ ]
+}

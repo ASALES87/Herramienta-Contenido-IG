@@ -1,0 +1,46 @@
+name: Contenido (aprobaciones y reserva de contenido)
+
+# Cada mañana:
+#  - aprueba las tandas que llevan 3 días pendientes sin comentarios del cliente (lo que no se comenta, se publica);
+#  - si a algún cliente activo se le acaba el contenido y la tarea de tandas no lo ha cubierto, abre un aviso.
+# La tanda la escribe la tarea programada de Claude (días 1 y 15); esto es la red de seguridad.
+on:
+  schedule:
+    - cron: "5 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: contenido
+  cancel-in-progress: false
+
+jobs:
+  contenido:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Aprobar tandas vencidas
+        run: python motor/tandas.py vencidas
+      - name: Guardar
+        run: |
+          git config user.name "contenido-bot"
+          git config user.email "contenido-bot@users.noreply.github.com"
+          git add clientes/*/content/tandas.json 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "Tandas aprobadas [skip ci]" && git pull --rebase -q && git push)
+      - name: Avisos de contenido
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python motor/tandas.py estado
+          python motor/tandas.py avisos --out "$RUNNER_TEMP/avisos.md"
+          TITULO="🗓️ Contenido que necesita atención"
+          if [ -s "$RUNNER_TEMP/avisos.md" ] && [ -z "$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$TITULO in:title" --json number -q '.[].number')" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" --title "$TITULO" --body-file "$RUNNER_TEMP/avisos.md"
+          fi

@@ -1,0 +1,74 @@
+{
+ "id": "panaderia-la-espiga",
+ "nombre": "Panadería La Espiga",
+ "_nota": "Generado por alta.py el 02/10/2026 desde ficha_espiga.json.",
+ "instagram": "laespiga.demo",
+ "sector": "restauracion",
+ "colores": {
+  "principal": "#7A3B1F",
+  "fondo": "#FBF4EC",
+  "acento": "#D9822B",
+  "texto": "#2A1E17"
+ },
+ "fuentes": {
+  "titulo": "Quicksand.ttf",
+  "texto": "Poppins-Regular.ttf",
+  "texto_semi": "Poppins-SemiBold.ttf",
+  "peso_titulo": 700
+ },
+ "logo": null,
+ "logo_claro": null,
+ "logo_texto": "panadería la espiga",
+ "logo_etiqueta": null,
+ "adorno": "puntos",
+ "pilares": {
+  "P1": "La carta y el plato estrella",
+  "P2": "Detrás de la cocina",
+  "P3": "Mitos y curiosidades",
+  "P4": "Producto y proveedores",
+  "P5": "Clientes y momentos",
+  "P6": "Eventos y fechas",
+  "P7": "Tu turno"
+ },
+ "pilar_pregunta": "P7",
+ "destacadas": {
+  "P1": "La carta",
+  "P2": "Cocina",
+  "P3": "Curioso",
+  "P4": "Producto",
+  "P5": "Clientes",
+  "P6": "Eventos",
+  "P7": "Tu turno"
+ },
+ "destacadas_sub": {
+  "Tu turno": "preguntas"
+ },
+ "textos": {},
+ "cta_por_defecto": "Escríbenos por WhatsApp",
+ "video_query_defecto": "restaurant kitchen cooking",
+ "idioma": "es-ES",
+ "tuteo": true,
+ "tono": [
+  "cercano",
+  "divertido"
+ ],
+ "emojis": "pocos",
+ "hashtags": "",
+ "contenido_propio": {
+  "fotos": "algunas",
+  "videos": "alguno",
+  "preferencia": "mezcla",
+  "fotos_nuevas": "semana"
+ },
+ "aprobacion_tandas": true,
+ "media_host": "r2",
+ "email_avisos": "marta@laespiga.demo",
+ "plantillas": [
+  "foto_franja",
+  "bloques"
+ ],
+ "fotos": {
+  "nivel": "auto",
+  "nivel_max": "muchas"
+ }
+}

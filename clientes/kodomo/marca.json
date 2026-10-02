@@ -1,0 +1,55 @@
+{
+ "id": "kodomo",
+ "nombre": "Kodomo Play",
+ "_nota": "REFERENCIA para comprobar que el motor genérico reproduce el aspecto de Kodomo. Inactivo: Kodomo se sigue publicando desde su propio repo.",
+ "instagram": "kodomo.play",
+ "colores": {
+  "principal": "#5E7563",
+  "fondo": "#FAF7F0",
+  "acento": "#D9A441",
+  "texto": "#262019"
+ },
+ "fuentes": {
+  "titulo": "Quicksand.ttf",
+  "texto": "Poppins-Regular.ttf",
+  "texto_semi": "Poppins-SemiBold.ttf",
+  "peso_titulo": 700
+ },
+ "logo": null,
+ "logo_texto": "kodomo",
+ "logo_etiqueta": "PLAY",
+ "adorno": "cubos",
+ "pilares": {
+  "P1": "Beneficios del juego",
+  "P2": "Curiosidades",
+  "P3": "Mito vs. realidad",
+  "P4": "Guía práctica",
+  "P5": "Tu turno",
+  "P6": "Detrás de Kodomo",
+  "P7": "Juego en casa",
+  "P8": "Momentos"
+ },
+ "pilar_pregunta": "P5",
+ "destacadas": {
+  "P3": "Mitos",
+  "P4": "Ideas",
+  "P7": "Ideas",
+  "P6": "Kodomo",
+  "P1": "Curioso",
+  "P2": "Curioso",
+  "P8": "Curioso",
+  "P5": "Tu turno"
+ },
+ "destacadas_sub": {
+  "Ideas": "para jugar",
+  "Mitos": "y realidades",
+  "Curioso": "¿sabías que…?",
+  "Tu turno": "preguntas",
+  "Kodomo": "quiénes somos"
+ },
+ "video_query_defecto": "children playing wooden toys",
+ "media_host": "simulado",
+ "biblioteca": {
+  "dias_sin_repetir": 60
+ }
+}

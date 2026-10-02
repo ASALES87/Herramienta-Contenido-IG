@@ -1,0 +1,49 @@
+{
+ "fotos": [
+  {
+   "id": "s001",
+   "archivo": "stock_s03_1.jpg",
+   "origen": "stock",
+   "notas": "padre e hija jugando en el parque",
+   "chips": [
+    "familia"
+   ],
+   "foco": {
+    "x": 0.5,
+    "y": 0.4
+   },
+   "credito": "Pixabay: https://pixabay.com/videos/id-237643/ (fotograma)",
+   "query": "family playing park"
+  },
+  {
+   "id": "s002",
+   "archivo": "stock_s03_4.jpg",
+   "origen": "stock",
+   "notas": "padre e hija jugando en el parque",
+   "chips": [
+    "familia"
+   ],
+   "foco": {
+    "x": 0.5,
+    "y": 0.4
+   },
+   "credito": "Pixabay: https://pixabay.com/videos/id-237643/ (fotograma)",
+   "query": "family playing park"
+  },
+  {
+   "id": "s003",
+   "archivo": "stock_s03_8.jpg",
+   "origen": "stock",
+   "notas": "padre e hija jugando en el parque",
+   "chips": [
+    "familia"
+   ],
+   "foco": {
+    "x": 0.5,
+    "y": 0.4
+   },
+   "credito": "Pixabay: https://pixabay.com/videos/id-237643/ (fotograma)",
+   "query": "family playing park"
+  }
+ ]
+}

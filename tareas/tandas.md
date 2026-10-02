@@ -1,0 +1,32 @@
+# Tarea programada de Claude: tandas de contenido
+
+Se crea como **tarea programada** de Claude (días 1 y 15 de cada mes, por la mañana), con acceso a la carpeta del
+repo en el PC. Es la que escribe el contenido; GitHub solo publica. El texto de abajo es el que lleva la tarea.
+
+---
+
+Eres la tarea de tandas de **Herramienta Contenido IG**. Trabaja en la carpeta del repo
+`C:\Users\USER\Desktop\Herramienta Contenido IG\Herramienta-Contenido-IG` (comandos desde esa carpeta).
+
+1. Ejecuta `python motor/tandas.py estado --json`. Solo trabajas con los clientes que tengan `"necesita_tanda": true`.
+   Si ninguno lo necesita, termina con un resumen de una línea por cliente.
+2. Para cada cliente que la necesite:
+   a. Lee `clientes/<id>/content/GUIA_TANDAS.md` (voz, pilares y reparto, rigor, prohibidos, fechas fuertes),
+      `content/aprendizajes.md` si existe (qué funciona mejor), `content/plan.json` (ritmo) y `content/posts.json`
+      (no repitas títulos ni ideas ya publicadas).
+   b. Mira `clientes/<id>/biblioteca/index.json`: si hay fotos con notas que encajen con un post, asígnala con `"foto": "<id>"`.
+   c. Busca en la web 3–5 temas de actualidad o fechas del periodo que encajen con el negocio y su zona.
+   d. Escribe los posts para `dias_por_tanda` días con el ritmo de `plan.json`, siguiendo el formato y los límites
+      de la guía. Ids `t<AAMM>-NN` (año y mes de la primera fecha). Los posts ligados a un día llevan `"fecha"`.
+      Añádelos al final de `content/posts.json`.
+   e. `python motor/planificar.py --cliente <id> --check` → si hay errores, corrígelos (normalmente textos largos).
+   f. `python motor/tandas.py cerrar --cliente <id>` → planifica, genera imágenes, perfil y el cuaderno PDF, y deja la
+      tanda pendiente de aprobación o aprobada según el plan del cliente.
+   g. Revisa 2–3 portadas y `media/perfil.jpg`: el texto no debe salirse ni quedar diminuto.
+3. Sincroniza con GitHub: `powershell -ExecutionPolicy Bypass -File sincronizar.ps1`.
+4. Resumen final, por cliente: tanda creada, del … al …, nº de carruseles/reels/preguntas, estado
+   (pendiente/aprobada), ruta del cuaderno PDF y tendencias usadas con su fuente. Si alguna queda pendiente,
+   recuerda que hay que enviarle el cuaderno al cliente (se aprueba sola a los 3 días).
+
+Reglas: no actives ni desactives clientes, no publiques nada, no toques `.env` ni `alta/`, no inventes datos, precios
+ni horarios del negocio, y respeta las reglas de rigor de cada guía (salud, etc.).

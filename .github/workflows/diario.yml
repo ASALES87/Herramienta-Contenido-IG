@@ -1,0 +1,71 @@
+name: Resumen diario (comentarios y métricas de cada cliente)
+
+# Cada día a las 21:45 (Madrid): un aviso por cliente con sus comentarios nuevos y, los lunes, su informe semanal.
+# (Más adelante: enviarlo también al email del cliente, marca.json → email_avisos.)
+on:
+  schedule:
+    - cron: "45 19,20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: diario
+  cancel-in-progress: false
+
+jobs:
+  diario:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SECRETOS: ${{ toJSON(secrets) }}
+    steps:
+      - name: ¿Son las 21 h en Madrid?
+        id: hora
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(TZ=Europe/Madrid date +%H)" = "21" ]; then
+            echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "ok=0" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.hora.outputs.ok == '1'
+      - uses: actions/setup-python@v5
+        if: steps.hora.outputs.ok == '1'
+        with:
+          python-version: "3.12"
+          cache: pip
+      - if: steps.hora.outputs.ok == '1'
+        run: pip install -r requirements.txt
+      - name: Comentarios y métricas
+        if: steps.hora.outputs.ok == '1'
+        run: |
+          if [ "$(TZ=Europe/Madrid date +%u)" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python motor/todos.py diario --dir "$RUNNER_TEMP/diario" --informe
+          else
+            python motor/todos.py diario --dir "$RUNNER_TEMP/diario"
+          fi
+      - name: Avisos
+        if: steps.hora.outputs.ok == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          for f in "$RUNNER_TEMP"/diario/*_comentarios.md; do
+            c=$(basename "$f" _comentarios.md)
+            [ -s "$f" ] && gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" \
+              --title "💬 $c · comentarios nuevos · $(TZ=Europe/Madrid date '+%d/%m')" --body-file "$f"
+          done
+          for f in "$RUNNER_TEMP"/diario/*_informe.md; do
+            c=$(basename "$f" _informe.md)
+            gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" \
+              --title "📊 $c · informe semanal · $(TZ=Europe/Madrid date '+%d/%m')" --body-file "$f"
+          done
+      - name: Guardar
+        if: always() && steps.hora.outputs.ok == '1'
+        run: |
+          git config user.name "contenido-bot"
+          git config user.email "contenido-bot@users.noreply.github.com"
+          for f in clientes/*/content/comentarios_vistos.json clientes/*/content/metricas.json clientes/*/content/aprendizajes.md; do
+            [ -f "$f" ] && git add "$f"
+          done
+          git diff --cached --quiet || (git commit -m "Comentarios y métricas [skip ci]" && git pull --rebase -q && git push)
