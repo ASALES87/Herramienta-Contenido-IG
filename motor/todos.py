@@ -50,14 +50,18 @@ def clientes(ensayo=False, solo=None):
             yield d.name, plan
 
 
+POR_CLIENTE = ("IG_ACCESS_TOKEN_", "IG_USER_ID_", "IG_TOKEN_EXPIRES_")
+
+
 def entorno(cid: str) -> dict:
     """Variables para el proceso de un cliente: las suyas (con sufijo) y las comunes; nunca las de otro cliente."""
-    try:
+    suf = "_" + cid.upper().replace("-", "_")
+    env = {k: v for k, v in os.environ.items()
+           if k != "SECRETOS" and not (k.startswith(POR_CLIENTE) and not k.endswith(suf))}
+    try:   # compatibilidad: secretos en bloque (ya no se usa en los workflows)
         sec = json.loads(os.environ.get("SECRETOS") or "{}")
     except ValueError:
         sec = {}
-    suf = "_" + cid.upper().replace("-", "_")
-    env = {k: v for k, v in os.environ.items() if k != "SECRETOS"}
     for k, v in sec.items():
         if k.endswith(suf) or k in COMUNES:
             env[k] = v
@@ -154,6 +158,46 @@ def cmd_horarios(a):
             print("publicar.yml ya estaba al día")
 
 
+# ---------- secretos: cada workflow nombra uno a uno los secretos de cada cliente ----------
+# (GitHub marca como sospechoso pasar todos los secretos de golpe con toJSON(secrets))
+WORKFLOWS = ROOT / ".github" / "workflows"
+
+
+def todos_los_clientes():
+    for d in sorted(CLIENTES.iterdir()):
+        if d.is_dir() and not d.name.startswith("_") and (d / "marca.json").exists() \
+                and not _load(d / "marca.json", {}).get("solo_referencia"):
+            yield d.name
+
+
+def lineas_secretos(indent: str) -> list[str]:
+    L = [f"{indent}{k}: ${{{{ secrets.{k} }}}}" for k in COMUNES if k != "MEDIA_HOST"]
+    for cid in todos_los_clientes():
+        suf = cid.upper().replace("-", "_")
+        for k in ("IG_ACCESS_TOKEN", "IG_USER_ID"):
+            L.append(f"{indent}{k}_{suf}: ${{{{ secrets.{k}_{suf} }}}}")
+    return L
+
+
+def cmd_secretos(a):
+    carpeta = Path(a.dir) if a.dir else WORKFLOWS
+    cambios = 0
+    for wf in sorted(carpeta.glob("*.yml")):
+        txt = wf.read_text(encoding="utf-8")
+        out, pos = [], 0
+        for m in re.finditer(r"^([ ]*)# >>> secretos[^\n]*\n(.*?)^([ ]*)# <<< secretos", txt, flags=re.S | re.M):
+            indent = m.group(1)
+            out.append(txt[pos:m.start(2)] + "\n".join(lineas_secretos(indent)) + "\n")
+            pos = m.start(3)
+        out.append(txt[pos:])
+        nuevo = "".join(out)
+        if nuevo != txt:
+            wf.write_text(nuevo, encoding="utf-8")
+            cambios += 1
+            print(f"✓ {wf.name}: secretos de {len(list(todos_los_clientes()))} clientes")
+    print("Workflows al día." if not cambios else f"{cambios} workflow(s) actualizados (súbelos a GitHub)")
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -162,6 +206,8 @@ def main():
     sub.add_parser("hay-reels").set_defaults(fn=cmd_hay_reels)
     s = sub.add_parser("diario"); s.add_argument("--dir", required=True); s.add_argument("--informe", action="store_true"); s.set_defaults(fn=cmd_diario)
     s = sub.add_parser("horarios"); s.add_argument("--escribir", action="store_true"); s.set_defaults(fn=cmd_horarios)
+    s = sub.add_parser("secretos", help="actualiza la lista de secretos por cliente en los workflows")
+    s.add_argument("--escribir", action="store_true"); s.add_argument("--dir"); s.set_defaults(fn=cmd_secretos)
     a = ap.parse_args()
     a.fn(a)
 

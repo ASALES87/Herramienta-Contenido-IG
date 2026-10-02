@@ -37,7 +37,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
-      SECRETOS: ${{ toJSON(secrets) }}
+      # >>> secretos (generado por motor/todos.py secretos; no editar a mano)
+      IG_APP_ID: ${{ secrets.IG_APP_ID }}
+      IG_APP_SECRET: ${{ secrets.IG_APP_SECRET }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+      IG_ACCESS_TOKEN_CLINICA_FISIO_MAR: ${{ secrets.IG_ACCESS_TOKEN_CLINICA_FISIO_MAR }}
+      IG_USER_ID_CLINICA_FISIO_MAR: ${{ secrets.IG_USER_ID_CLINICA_FISIO_MAR }}
+      IG_ACCESS_TOKEN_DEMO: ${{ secrets.IG_ACCESS_TOKEN_DEMO }}
+      IG_USER_ID_DEMO: ${{ secrets.IG_USER_ID_DEMO }}
+      IG_ACCESS_TOKEN_PANADERIA_LA_ESPIGA: ${{ secrets.IG_ACCESS_TOKEN_PANADERIA_LA_ESPIGA }}
+      IG_USER_ID_PANADERIA_LA_ESPIGA: ${{ secrets.IG_USER_ID_PANADERIA_LA_ESPIGA }}
+      IG_ACCESS_TOKEN_PRUEBA_FLORISTERIA: ${{ secrets.IG_ACCESS_TOKEN_PRUEBA_FLORISTERIA }}
+      IG_USER_ID_PRUEBA_FLORISTERIA: ${{ secrets.IG_USER_ID_PRUEBA_FLORISTERIA }}
+      IG_ACCESS_TOKEN_TALLER_HERMANOS_RUIZ: ${{ secrets.IG_ACCESS_TOKEN_TALLER_HERMANOS_RUIZ }}
+      IG_USER_ID_TALLER_HERMANOS_RUIZ: ${{ secrets.IG_USER_ID_TALLER_HERMANOS_RUIZ }}
+      # <<< secretos
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -48,17 +68,23 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Instalar ffmpeg (solo si hay un reel a punto)
+        env:
+          MODO: ${{ inputs.modo }}
         run: |
-          if [ "$(python motor/todos.py hay-reels)" = "si" ] || [ "${{ inputs.modo }}" = "publicar_siguiente" ]; then
+          if [ "$(python motor/todos.py hay-reels)" = "si" ] || [ "$MODO" = "publicar_siguiente" ]; then
             command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
           fi
 
       - name: Publicar lo que toca
+        env:
+          MODO: ${{ inputs.modo }}
+          CLIENTE_ELEGIDO: ${{ inputs.cliente }}
         run: |
-          if [ "${{ inputs.modo }}" = "simular" ]; then
-            python motor/todos.py publicar --simular ${{ inputs.cliente && format('--cliente {0}', inputs.cliente) || '' }}
-          elif [ "${{ inputs.modo }}" = "publicar_siguiente" ]; then
-            python motor/todos.py siguiente --cliente "${{ inputs.cliente }}"
+          if [ "$MODO" = "simular" ]; then
+            if [ -n "$CLIENTE_ELEGIDO" ]; then python motor/todos.py publicar --simular --cliente "$CLIENTE_ELEGIDO"
+            else python motor/todos.py publicar --simular; fi
+          elif [ "$MODO" = "publicar_siguiente" ]; then
+            python motor/todos.py siguiente --cliente "$CLIENTE_ELEGIDO"
           else
             python motor/todos.py publicar
           fi

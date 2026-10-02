@@ -312,8 +312,9 @@ def main():
             res = subprocess.run([sys.executable, str(ROOT / "motor" / script), "--cliente", cid], capture_output=True, text=True)
             print("  " + (res.stdout.strip().splitlines() or [""])[-1] if res.returncode == 0 else f"  ✗ {script}: {res.stderr.strip()[-300:]}")
     if (ROOT / ".github" / "workflows" / "publicar.yml").exists():
-        res = subprocess.run([sys.executable, str(ROOT / "motor" / "todos.py"), "horarios", "--escribir"], capture_output=True, text=True)
-        print("  " + (res.stdout.strip().splitlines() or [""])[-1])
+        for orden in ("horarios", "secretos"):   # horas de publicación y secretos del cliente nuevo en los workflows
+            res = subprocess.run([sys.executable, str(ROOT / "motor" / "todos.py"), orden, "--escribir"], capture_output=True, text=True)
+            print("  " + (res.stdout.strip().splitlines() or [""])[-1])
     print(f"  Siguiente: abre clientes/{cid}/CHECKLIST_{cid}.md")
     print(f"  Tiempo: {time.time() - t0:.0f} s")
 
