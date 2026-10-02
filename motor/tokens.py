@@ -42,6 +42,8 @@ def _secretos() -> dict:
 def _clientes():
     for d in sorted(CLIENTES.iterdir()):
         if d.is_dir() and not d.name.startswith("_") and (d / "marca.json").exists():
+            if json.loads((d / "marca.json").read_text(encoding="utf-8")).get("solo_referencia"):
+                continue
             try:
                 plan = json.loads((d / "content" / "plan.json").read_text(encoding="utf-8"))
             except (OSError, ValueError):
@@ -108,8 +110,9 @@ def cmd_renovar_todos(a):
 
 def cmd_aviso_pat(a):
     cad = os.environ.get("GH_PAT_CADUCA") or _secretos().get("GH_PAT_CADUCA")
-    if not cad:
-        msg = "No está configurada la variable GH_PAT_CADUCA: no puedo avisar de cuándo caduca el GH_PAT."
+    if not cad:   # sin GH_PAT configurado todavía (ensayo): solo se informa en el registro, sin aviso
+        print("No está configurada la variable GH_PAT_CADUCA: no puedo avisar de cuándo caduca el GH_PAT.")
+        return
     else:
         dias = (date.fromisoformat(cad) - date.today()).days
         if dias not in AVISOS_PAT and dias > 0:

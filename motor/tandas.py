@@ -43,6 +43,8 @@ def clientes(todos=False):
     for d in sorted(CLIENTES.iterdir()):
         if d.is_dir() and not d.name.startswith("_") and (d / "marca.json").exists():
             plan = _load(d / "content" / "plan.json", {})
+            if _load(d / "marca.json", {}).get("solo_referencia"):
+                continue
             if todos or plan.get("activo") or plan.get("ensayo"):
                 yield d.name, d, plan
 

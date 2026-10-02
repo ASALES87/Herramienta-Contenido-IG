@@ -44,6 +44,8 @@ def clientes(ensayo=False, solo=None):
         if solo and d.name != solo:
             continue
         plan = _load(d / "content" / "plan.json", {})
+        if _load(d / "marca.json", {}).get("solo_referencia"):
+            continue   # cliente de referencia: nunca se toca desde aquí
         if plan.get("activo") or (ensayo and plan.get("ensayo")) or solo:
             yield d.name, plan
 

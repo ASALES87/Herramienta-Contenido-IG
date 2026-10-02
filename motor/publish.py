@@ -99,6 +99,9 @@ def cmd_refresh(args):
 
 def cmd_next(args):
     """Publica YA la siguiente publicación pendiente del calendario (para probar)."""
+    if C.MARCA.get("solo_referencia"):
+        print(f"[{C.ID}] Cliente de referencia: nunca se publica desde este repo.")
+        return
     nxt = cal.due_posts() or cal.upcoming(1)  # primero las atrasadas
     if not nxt:
         print("No quedan publicaciones pendientes.")

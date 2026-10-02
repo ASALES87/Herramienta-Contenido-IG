@@ -3,8 +3,9 @@
 Motor multi-cliente para generar y publicar contenido de Instagram de pymes. Nace del motor de Kodomo Publisher,
 que sigue funcionando aparte y no se toca.
 
-> **Estado: ensayo general.** Solo hay clientes de prueba: `demo` (Panadería La Espiga, ficticia) y `kodomo`
-> (referencia para comprobar que el motor reproduce el aspecto de Kodomo; inactivo).
+> **Estado: ensayo general.** Solo hay clientes ficticios: `demo`, `panaderia-la-espiga` (en ensayo), `clinica-fisio-mar`
+> y `taller-hermanos-ruiz`. Kodomo no está en este repo: se publica desde el suyo (Kodomo-Publisher).
+> Prueba completa del motor con otro cliente ficticio: `python pruebas/prueba_motor.py`.
 
 ## Estructura
 ```

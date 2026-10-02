@@ -69,7 +69,8 @@ def plan() -> dict:
 
 
 def activo() -> bool:
-    return bool(plan().get("activo", False))
+    """Un cliente marcado como solo_referencia nunca está activo en este repo."""
+    return bool(plan().get("activo", False)) and not MARCA.get("solo_referencia")
 
 
 # ---------- textos fijos (cada cliente puede cambiarlos en marca.json → "textos") ----------
