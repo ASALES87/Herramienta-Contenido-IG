@@ -9,7 +9,8 @@ Cada reel desarrolla el contenido de una publicación de la semana (content/reel
   25,5-30    cierre: logo + la pregunta para comentar
 
 Fondo: vídeo de stock de Pixabay (PIXABAY_API_KEY) o Pexels (PEXELS_API_KEY), gratis; si no hay, una foto
-de la biblioteca con movimiento lento; si tampoco, el color de marca. Un vídeo propio en clientes/<id>/media/reels_src/<id del carrusel>.mp4 (tiene prioridad).
+de la biblioteca con movimiento lento; si tampoco, el color de marca. Un vídeo propio en clientes/<id>/media/reels_src/<id del carrusel>.mp4 (tiene prioridad),
+y si no, los vídeos que manda el cliente desde «Enviar foto» (biblioteca/videos/), cada uno en un solo reel.
 Cada reel busca su propio vídeo con la búsqueda de reels.json y nunca repite uno ya usado
 (content/videos_usados.json).
 Música: los .mp3 de clientes/<id>/assets/music/ (o, si no hay, motor/assets/music/) van rotando en orden de publicación. Si no hay, va sin música.
@@ -224,6 +225,19 @@ def build(reel_id: str, force: bool = False) -> Path:
     R.ensure_fonts()
 
     bg = SRC / f"{reel['twin']}.mp4"
+    if not bg.exists():   # vídeo propio que haya mandado el cliente y aún no se haya usado
+        try:
+            import biblioteca as B
+            used = _used_videos()
+            mio = used.get(reel_id, "")
+            v = B.por_id_video(mio[7:]) if mio.startswith("propio:") else B.video_libre(post)
+            if v:
+                bg = B.DIR / v["archivo"]
+                if not mio:
+                    _mark_video(reel_id, f"propio:{v['id']}")
+                print(f"  vídeo propio del cliente: {v['id']} ({v.get('notas', '')[:40]})")
+        except Exception as e:
+            print(f"  (aviso) no se pudo usar un vídeo propio: {e}")
     if not bg.exists():
         dest = SRC / f"{reel['twin']}.mp4"
         used = _used_videos()

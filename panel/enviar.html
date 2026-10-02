@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f6f4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Enviar foto">
+<title>Enviar foto</title>
+<style>
+:root{--marca:#1f6f4a; --fondo:#f6f4ef; --acento:#d9822b; --ink:#1d2320; --muted:#6b736f; --line:#e4e0d8; --panel:#fff; --ok:#1f8a55; --bad:#c0392b}
+@media (prefers-color-scheme: dark){ :root{--fondo:#141816; --ink:#eceeed; --muted:#a2aaa6; --line:#2d3330; --panel:#1d2220} }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--fondo);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--marca);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 16px 18px}
+header h1{margin:0;font-size:20px}
+header p{margin:2px 0 0;opacity:.85;font-size:14px}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 40px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin:14px 0}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:5px;margin-top:14px}
+.tabs button{border:0;background:none;color:var(--ink);font:600 15px system-ui,sans-serif;padding:11px 4px;border-radius:12px}
+.tabs button.on{background:var(--marca);color:#fff}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:600 16px system-ui,sans-serif;padding:14px;border-radius:14px;cursor:pointer;width:100%}
+.btn.pri{background:var(--marca);border-color:var(--marca);color:#fff}
+.btn.grande{padding:22px 10px;flex-direction:column;font-size:15px}
+.btn.grande span{font-size:28px;line-height:1}
+.btn[disabled]{opacity:.55}
+label.t{display:block;font-weight:600;margin:14px 0 6px}
+textarea,input[type=time],input[type=datetime-local]{width:100%;border:1px solid var(--line);border-radius:14px;padding:12px;font:inherit;background:var(--panel);color:var(--ink)}
+textarea{min-height:92px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:8px 13px;font:500 14px system-ui,sans-serif}
+.chips button.on{background:var(--marca);border-color:var(--marca);color:#fff}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg.col{flex-direction:column}
+.seg.col label{min-width:0}
+.seg label{flex:1;min-width:120px;border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;gap:8px;align-items:center;font-size:15px}
+.prev{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.prev div{position:relative}
+.prev img,.prev video{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:10px;background:#0001}
+.prev button{position:absolute;top:4px;right:4px;border:0;border-radius:50%;width:28px;height:28px;background:#000a;color:#fff;font-size:16px}
+.muted{color:var(--muted);font-size:14px}
+.barra{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:12px}
+.barra i{display:block;height:100%;width:0;background:var(--marca);transition:width .2s}
+.msg{padding:12px 14px;border-radius:12px;margin-top:12px;font-size:15px}
+.msg.ok{background:#1f8a5522;color:var(--ok)} .msg.bad{background:#c0392b1f;color:var(--bad)}
+.pin{display:flex;gap:10px;justify-content:center;margin:14px 0}
+.pin input{width:56px;height:64px;text-align:center;font:700 28px system-ui;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink)}
+.lista .it{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.lista .it:first-child{border-top:0}
+.lista .ic{width:52px;height:52px;border-radius:10px;display:grid;place-items:center;background:#0000000d;font-size:22px;overflow:hidden}
+.lista .ic img{width:100%;height:100%;object-fit:cover}
+.previa img{width:100%;max-width:300px;display:block;margin:12px auto 0;border-radius:14px;box-shadow:0 4px 18px #0002}
+details summary{cursor:pointer;color:var(--muted);font-size:14px}
+a{color:var(--marca)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1 id="nombre">Enviar foto</h1><p id="sub">Tus fotos, vídeos y avisos para Instagram</p></header>
+<div class="wrap">
+
+  <!-- Entrar -->
+  <div class="card" id="v-pin" hidden>
+    <h2 style="margin:0 0 4px;font-size:18px">Entra con tu PIN</h2>
+    <p class="muted" style="margin:0">Son las 4 cifras que te hemos dado. Solo se pide la primera vez en este móvil.</p>
+    <div class="pin"></div>
+    <button class="btn pri" id="b-entrar">Entrar</button>
+    <div id="pin-msg"></div>
+  </div>
+
+  <div id="v-app" hidden>
+    <div class="tabs" role="tablist">
+      <button class="on" data-tab="foto">📷 Foto</button><button data-tab="video">🎬 Vídeo</button><button data-tab="aviso">📣 Aviso</button>
+    </div>
+
+    <!-- Foto -->
+    <div class="card" data-panel="foto">
+      <div class="big">
+        <button class="btn grande" data-pick="f-cam"><span>📷</span>Hacer foto</button>
+        <button class="btn grande" data-pick="f-gal"><span>🖼️</span>De la galería</button>
+      </div>
+      <input type="file" id="f-cam" accept="image/*" capture="environment" hidden>
+      <input type="file" id="f-gal" accept="image/*" multiple hidden>
+      <div class="prev" id="f-prev"></div>
+      <label class="t" for="f-txt">¿Qué quieres que contemos?</label>
+      <textarea id="f-txt" placeholder="Ej.: Hogaza nueva de centeno, sale los viernes. / Nuestra compañera Lucía cumple 10 años con nosotros."></textarea>
+      <div class="chips" id="f-chips" style="margin-top:10px"></div>
+      <label class="t">¿Para cuándo?</label>
+      <div class="seg"><label><input type="radio" name="f-cuando" value="encaje" checked> Cuando encaje</label><label><input type="radio" name="f-cuando" value="semana"> Esta semana</label></div>
+      <button class="btn pri" id="f-enviar" style="margin-top:16px" disabled>Enviar</button>
+      <div class="barra" hidden><i></i></div><div class="out"></div>
+    </div>
+
+    <!-- Vídeo -->
+    <div class="card" data-panel="video" hidden>
+      <div class="big">
+        <button class="btn grande" data-pick="v-cam"><span>🎬</span>Grabar vídeo</button>
+        <button class="btn grande" data-pick="v-gal"><span>🎞️</span>De la galería</button>
+      </div>
+      <input type="file" id="v-cam" accept="video/*" capture="environment" hidden>
+      <input type="file" id="v-gal" accept="video/*" hidden>
+      <p class="muted">Hasta 60 segundos, en vertical si puedes. Lo usamos de fondo en tus reels.</p>
+      <div class="prev" id="v-prev"></div>
+      <label class="t" for="v-txt">¿Qué se ve en el vídeo?</label>
+      <textarea id="v-txt" placeholder="Ej.: Sacando el pan del horno a las 6 de la mañana."></textarea>
+      <div class="chips" id="v-chips" style="margin-top:10px"></div>
+      <button class="btn pri" id="v-enviar" style="margin-top:16px" disabled>Enviar vídeo</button>
+      <div class="barra" hidden><i></i></div><div class="out"></div>
+    </div>
+
+    <!-- Aviso -->
+    <div class="card" data-panel="aviso" hidden>
+      <p class="muted" style="margin-top:0">Para lo que no puede esperar: «Hoy cerramos a las 14:00», «Ya tenemos roscón». Sale como historia con tu marca, tal cual lo escribas.</p>
+      <label class="t" for="a-txt">Tu aviso <span class="muted" id="a-cont">0/140</span></label>
+      <textarea id="a-txt" maxlength="140" placeholder="Hoy cerramos a las 14:00 por inventario. ¡Mañana, como siempre!"></textarea>
+      <label class="t">Foto (opcional)</label>
+      <div class="big"><button class="btn" data-pick="a-cam">📷 Hacer foto</button><button class="btn" data-pick="a-gal">🖼️ Galería</button></div>
+      <input type="file" id="a-cam" accept="image/*" capture="environment" hidden><input type="file" id="a-gal" accept="image/*" hidden>
+      <div class="prev" id="a-prev"></div>
+      <label class="t">¿Cuándo sale?</label>
+      <div class="seg col">
+        <label><input type="radio" name="a-cuando" value="ahora" checked> Lo antes posible</label>
+        <label><input type="radio" name="a-cuando" value="hora"> Hoy, a una hora</label>
+        <input type="time" id="a-hora" hidden>
+        <label><input type="radio" name="a-cuando" value="dia"> Otro día</label>
+        <input type="datetime-local" id="a-dia" hidden>
+      </div>
+      <p class="muted">Sale en la primera publicación programada desde esa hora.</p>
+      <div class="big" style="margin-top:12px"><button class="btn" id="a-previa">Ver cómo queda</button><button class="btn pri" id="a-enviar" disabled>Publicar aviso</button></div>
+      <div class="previa" id="a-img"></div>
+      <div class="out"></div>
+    </div>
+
+    <div class="card lista"><h2 style="margin:0 0 8px;font-size:17px">Lo que has enviado</h2><div id="lista"><p class="muted">Todavía nada.</p></div></div>
+    <div class="card">
+      <a href="#" id="l-revisar">Revisar mi contenido →</a>
+      <details style="margin-top:12px"><summary>Tenerla en la pantalla de inicio</summary>
+        <p class="muted"><b>iPhone</b>: botón Compartir ⎋ → «Añadir a pantalla de inicio».<br><b>Android</b>: menú ⋮ → «Añadir a pantalla de inicio» o «Instalar».</p></details>
+    </div>
+  </div>
+</div>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const CID=decodeURIComponent(location.pathname.split("/")[2]||"");
+const K=new URLSearchParams(location.search).get("k")||"";
+let INFO=null;
+document.querySelector(".pin").innerHTML="<input inputmode='numeric' maxlength='1' autocomplete='one-time-code' aria-label='cifra'>".repeat(4);
+const link=document.createElement("link"); link.rel="manifest"; link.href=`/f/${encodeURIComponent(CID)}/manifest.json`; document.head.appendChild(link);
+const ap=document.createElement("link"); ap.rel="apple-touch-icon"; ap.href=`/f/${encodeURIComponent(CID)}/icono.png`; document.head.appendChild(ap);
+$("#l-revisar").href=`/c/${encodeURIComponent(CID)}`;
+
+async function iniciar(){
+  const r=await fetch(`/api/f/${encodeURIComponent(CID)}`);
+  if(r.status===401){ try{ marca(await r.json()); }catch(e){} verPin(); return; }
+  if(!r.ok){ document.querySelector(".wrap").innerHTML=`<div class="card">Este enlace no es válido. Pídenos uno nuevo.</div>`; return; }
+  INFO=await r.json();
+  if(K) history.replaceState(null,"",location.pathname);   // el enlace con clave no se queda a la vista
+  marca(INFO);
+  $("#v-pin").hidden=true; $("#v-app").hidden=false;
+  ["f","v"].forEach(p=>$(`#${p}-chips`).innerHTML=INFO.chips.map(x=>`<button type="button">${esc(x)}</button>`).join(""));
+  $$(".chips button").forEach(b=>b.onclick=()=>b.classList.toggle("on"));
+  pintarLista();
+}
+function marca(x){
+  const c=(x&&x.colores)||{};
+  if(c.principal){ document.documentElement.style.setProperty("--marca",c.principal); document.querySelector("meta[name=theme-color]").content=c.principal; }
+  if(c.acento) document.documentElement.style.setProperty("--acento",c.acento);
+  if(x&&x.nombre){ $("#nombre").textContent=x.nombre; document.title=`${x.nombre} · Enviar foto`; }
+}
+function verPin(){
+  $("#v-pin").hidden=false; $("#v-app").hidden=true;
+  if(!K){ $("#pin-msg").innerHTML=`<div class="msg bad">Abre la app con el enlace que te enviamos (solo hace falta la primera vez).</div>`; }
+  const ins=$$(".pin input"); ins[0].focus();
+  ins.forEach((el,i)=>{ el.oninput=()=>{ el.value=el.value.replace(/\D/g,"").slice(-1); if(el.value&&ins[i+1]) ins[i+1].focus(); if(ins.every(x=>x.value)) entrar(); };
+    el.onkeydown=e=>{ if(e.key==="Backspace"&&!el.value&&ins[i-1]) ins[i-1].focus(); }; });
+  $("#b-entrar").onclick=entrar;
+}
+async function entrar(){
+  const pin=$$(".pin input").map(x=>x.value).join("");
+  if(pin.length<4) return;
+  $("#b-entrar").disabled=true;
+  try{
+    const r=await fetch(`/api/f/${encodeURIComponent(CID)}/entrar`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({k:K,pin})});
+    const j=await r.json();
+    if(j.ok) return iniciar();
+    $("#pin-msg").innerHTML=`<div class="msg bad">${esc(j.salida)}</div>`; $$(".pin input").forEach(x=>x.value=""); $$(".pin input")[0].focus();
+  }finally{ $("#b-entrar").disabled=false; }
+}
+
+/* pestañas */
+$$("[data-tab]").forEach(b=>b.onclick=()=>{ $$("[data-tab]").forEach(x=>x.classList.toggle("on",x===b)); $$("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab); });
+$$("[data-pick]").forEach(b=>b.onclick=()=>$("#"+b.dataset.pick).click());
+
+/* fotos: se reducen en el móvil a 2160 px antes de subir (menos datos, más rápido) */
+const FOTOS=[]; let VIDEO=null, VIDEO_DUR=null, AVISO_FOTO=null;
+async function reducir(file,max=2160){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((ok,ko)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ko; i.src=url; });
+    const k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    const c=document.createElement("canvas"); c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    return await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.88));
+  }catch(e){ return file; } finally{ URL.revokeObjectURL(url); }
+}
+function pintarFotos(){
+  $("#f-prev").innerHTML=FOTOS.map((f,i)=>`<div><img src="${f.url}"><button data-x="${i}" aria-label="Quitar">×</button></div>`).join("");
+  $$("#f-prev [data-x]").forEach(b=>b.onclick=()=>{ URL.revokeObjectURL(FOTOS[+b.dataset.x].url); FOTOS.splice(+b.dataset.x,1); pintarFotos(); });
+  $("#f-enviar").disabled=!FOTOS.length; $("#f-enviar").textContent=FOTOS.length>1?`Enviar ${FOTOS.length} fotos`:"Enviar";
+}
+["f-cam","f-gal"].forEach(id=>$("#"+id).onchange=async e=>{
+  for(const f of [...e.target.files].slice(0,10)){ const b=await reducir(f); FOTOS.push({blob:b,url:URL.createObjectURL(b),nombre:f.name}); }
+  e.target.value=""; pintarFotos();
+});
+["v-cam","v-gal"].forEach(id=>$("#"+id).onchange=e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  const url=URL.createObjectURL(f); const v=document.createElement("video"); v.preload="metadata"; v.muted=true; v.src=url;
+  const out=$("[data-panel=video] .out"); let hecho=false;
+  const listo=dur=>{ if(hecho) return; hecho=true; VIDEO_DUR=dur;
+    if(dur&&dur>61){ out.innerHTML=`<div class="msg bad">Dura ${Math.round(dur)} s: como mucho 60 s. Recórtalo en la galería y vuelve a elegirlo.</div>`; return; }
+    if(f.size>300*1024*1024){ out.innerHTML=`<div class="msg bad">Pesa demasiado (más de 300 MB).</div>`; return; }
+    out.innerHTML=""; VIDEO=f;
+    $("#v-prev").innerHTML=dur?`<div><video src="${url}" muted playsinline controls></video></div>`:`<div style="display:grid;place-items:center;background:#0000000d;border-radius:10px;aspect-ratio:4/5">🎬<span class="muted" style="font-size:12px">${esc(f.name)}</span></div>`;
+    $("#v-enviar").disabled=false; };
+  v.onloadedmetadata=()=>listo(isFinite(v.duration)?v.duration:null);
+  v.onerror=()=>listo(null);                 // el móvil no sabe leerlo (p. ej. HEVC): se envía igual
+  setTimeout(()=>listo(null),4000);
+});
+["a-cam","a-gal"].forEach(id=>$("#"+id).onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  const b=await reducir(f,1920); const r=await subir(b,{tipo:"aviso_foto"});
+  if(r.ok){ AVISO_FOTO=r.foto; $("#a-prev").innerHTML=`<div><img src="${URL.createObjectURL(b)}"><button id="a-quitar">×</button></div>`; $("#a-quitar").onclick=()=>{ AVISO_FOTO=null; $("#a-prev").innerHTML=""; }; }
+  $("#a-enviar").disabled=true; $("#a-img").innerHTML="";
+});
+
+function chipsDe(p){ return $$(`#${p}-chips button.on`).map(b=>b.textContent).join(","); }
+function subir(blob,params,barra){
+  return new Promise(ok=>{
+    const x=new XMLHttpRequest(); x.open("POST",`/api/f/${encodeURIComponent(CID)}/subir?`+new URLSearchParams(params));
+    if(barra){ barra.hidden=false; x.upload.onprogress=e=>{ if(e.lengthComputable) barra.firstElementChild.style.width=(100*e.loaded/e.total)+"%"; }; }
+    x.onload=()=>{ try{ ok(JSON.parse(x.responseText)); }catch(e){ ok({ok:false,salida:"Error al enviar."}); } };
+    x.onerror=()=>ok({ok:false,salida:"Sin conexión. Prueba otra vez cuando tengas cobertura."});
+    x.send(blob);
+  });
+}
+$("#f-enviar").onclick=async()=>{
+  const card=$("[data-panel=foto]"), out=card.querySelector(".out"), barra=card.querySelector(".barra");
+  const texto=$("#f-txt").value.trim();
+  if(!texto&&!confirm("¿Enviar sin texto? Nos ayuda mucho saber qué quieres contar.")) return;
+  $("#f-enviar").disabled=true; let envio="", fallos=0;
+  for(const [i,f] of FOTOS.entries()){
+    out.innerHTML=`<p class="muted">Enviando ${i+1} de ${FOTOS.length}…</p>`;
+    const r=await subir(f.blob,{tipo:"foto",texto,chips:chipsDe("f"),cuando:document.querySelector("[name=f-cuando]:checked").value,envio,nombre:f.nombre},barra);
+    if(r.ok) envio=r.envio; else fallos++;
+  }
+  barra.hidden=true;
+  out.innerHTML=fallos?`<div class="msg bad">No se han podido enviar ${fallos}. Vuelve a intentarlo.</div>`:`<div class="msg ok">¡Recibido! ${FOTOS.length>1?"Las usaremos":"La usaremos"} en tus próximas publicaciones.</div>`;
+  if(!fallos){ FOTOS.splice(0); pintarFotos(); $("#f-txt").value=""; $$("#f-chips button").forEach(b=>b.classList.remove("on")); }
+  $("#f-enviar").disabled=!FOTOS.length; refrescar();
+};
+$("#v-enviar").onclick=async()=>{
+  const card=$("[data-panel=video]"), out=card.querySelector(".out"), barra=card.querySelector(".barra");
+  $("#v-enviar").disabled=true; out.innerHTML=`<p class="muted">Enviando vídeo… no cierres la app.</p>`;
+  const ext=(VIDEO.name.split(".").pop()||"mp4").toLowerCase();
+  const r=await subir(VIDEO,{tipo:"video",texto:$("#v-txt").value.trim(),chips:chipsDe("v"),duracion:VIDEO_DUR?VIDEO_DUR.toFixed(1):"",ext,nombre:VIDEO.name},barra);
+  barra.hidden=true;
+  out.innerHTML=r.ok?`<div class="msg ok">¡Vídeo recibido! Saldrá en uno de tus próximos reels.</div>`:`<div class="msg bad">${esc(r.salida)}</div>`;
+  if(r.ok){ VIDEO=null; $("#v-prev").innerHTML=""; $("#v-txt").value=""; } else $("#v-enviar").disabled=false;
+  refrescar();
+};
+/* aviso */
+$("#a-txt").oninput=()=>{ $("#a-cont").textContent=`${$("#a-txt").value.length}/140`; $("#a-enviar").disabled=true; $("#a-img").innerHTML=""; };
+function cuandoAviso(){
+  const v=document.querySelector("[name=a-cuando]:checked").value;
+  if(v==="hora") return $("#a-hora").value||"ahora";
+  if(v==="dia") return $("#a-dia").value||"ahora";
+  return "ahora";
+}
+async function aviso(previa){
+  const out=$("[data-panel=aviso] .out"); const texto=$("#a-txt").value.trim();
+  if(texto.length<3){ out.innerHTML=`<div class="msg bad">Escribe el aviso.</div>`; return; }
+  const r=await fetch(`/api/f/${encodeURIComponent(CID)}/aviso`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({texto,foto:AVISO_FOTO,cuando:cuandoAviso(),previa})}).then(r=>r.json()).catch(()=>({ok:false,salida:"Sin conexión."}));
+  if(previa){ if(r.ok){ $("#a-img").innerHTML=`<img src="${esc(r.img)}" alt="Vista previa">`; $("#a-enviar").disabled=false; out.innerHTML=""; } else out.innerHTML=`<div class="msg bad">${esc(r.salida)}</div>`; return; }
+  out.innerHTML=r.ok?`<div class="msg ok">${esc(r.salida)}</div>`:`<div class="msg bad">${esc(r.salida)}</div>`;
+  if(r.ok){ $("#a-txt").value=""; $("#a-cont").textContent="0/140"; AVISO_FOTO=null; $("#a-prev").innerHTML=""; $("#a-img").innerHTML=""; $("#a-enviar").disabled=true; refrescar(); }
+}
+$$("[name=a-cuando]").forEach(r=>r.onchange=()=>{ const v=document.querySelector("[name=a-cuando]:checked").value;
+  $("#a-hora").hidden=v!=="hora"; $("#a-dia").hidden=v!=="dia"; (v==="hora"?$("#a-hora"):v==="dia"?$("#a-dia"):null)?.focus(); });
+$("#a-previa").onclick=()=>aviso(true);
+$("#a-enviar").onclick=()=>aviso(false);
+
+/* lista */
+const ICON={foto:"📷",video:"🎬",aviso:"📣"};
+function fechaCorta(iso){ if(!iso) return ""; const d=new Date(iso); return d.toLocaleDateString("es-ES",{day:"numeric",month:"short"})+" "+d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}); }
+function pintarLista(){
+  const L=INFO.enviados||[];
+  if(!L.length) return;
+  $("#lista").innerHTML=L.map(e=>`<div class="it"><div class="ic">${e.img?`<img src="${esc(e.img)}">`:ICON[e.tipo]||"•"}</div>
+    <div><b>${e.tipo==="aviso"?"Aviso":e.tipo==="video"?"Vídeo":(e.archivos||[]).length>1?`${e.archivos.length} fotos`:"Foto"}</b> · <span class="muted">${fechaCorta(e.fecha)}</span>
+    <div class="muted">${esc(e.texto||"(sin texto)")}</div>
+    <div class="muted">${e.tipo==="aviso"?(e.estado==="publicado"?"✓ publicado":e.estado==="cancelado"?"cancelado":"programado · "+fechaCorta(e.publish_at)):"✓ recibido"}</div></div></div>`).join("");
+}
+async function refrescar(){ const r=await fetch(`/api/f/${encodeURIComponent(CID)}`); if(r.ok){ INFO=await r.json(); pintarLista(); } }
+iniciar();
+</script>
+</body>
+</html>

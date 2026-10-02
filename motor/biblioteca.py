@@ -138,7 +138,8 @@ def _alta(archivo: Path, origen: str, credito: str, query: str) -> dict:
     idx = _load(INDEX, {"fotos": []})
     n = len(idx["fotos"]) + 1
     f = {"id": f"{'s' if origen == 'stock' else 'p'}{n:03d}", "archivo": archivo.name, "origen": origen,
-         "notas": "", "chips": [], "foco": {"x": 0.5, "y": 0.45}, "credito": credito, "query": query}
+         "notas": "", "chips": [], "foco": {"x": 0.5, "y": 0.45}, "credito": credito, "query": query,
+         "fecha": datetime.now().date().isoformat()}
     idx["fotos"].append(f)
     _save(INDEX, idx)
     return f
@@ -192,6 +193,47 @@ def _pixabay(query, usados):
     return None
 
 
+# ---------- vídeos propios (los manda el cliente desde «Enviar foto») ----------
+VIDEOS = DIR / "videos"
+VIDEOS_USADOS = C.CONTENT / "videos_usados.json"
+
+
+def videos() -> list[dict]:
+    return [v for v in _load(INDEX, {"fotos": []}).get("videos", []) if (DIR / v["archivo"]).exists()]
+
+
+def video_libre(post: dict | None = None) -> dict | None:
+    """Un vídeo propio que no se haya usado en ningún reel (el que mejor encaje con el post; si no, el más antiguo)."""
+    usados = {u for u in _load(VIDEOS_USADOS, {}).values()}
+    libres_v = [v for v in videos() if f"propio:{v['id']}" not in usados]
+    if not libres_v:
+        return None
+    q = " ".join([(post or {}).get("title", ""), (post or {}).get("video_query", "")]).lower().split()
+    def orden(v):
+        texto = " ".join([v.get("notas", ""), " ".join(v.get("chips", []))]).lower()
+        return (-sum(1 for w in q if len(w) > 3 and w in texto), v.get("fecha", ""))
+    return sorted(libres_v, key=orden)[0]
+
+
+def por_id_video(vid: str) -> dict | None:
+    return next((v for v in videos() if v["id"] == vid), None)
+
+
+def alta_video(src: Path, notas: str = "", chips: list | None = None, duracion: float | None = None) -> dict:
+    import shutil
+    VIDEOS.mkdir(parents=True, exist_ok=True)
+    idx = _load(INDEX, {"fotos": []})
+    idx.setdefault("videos", [])
+    n = len(idx["videos"]) + 1
+    dest = VIDEOS / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{n:03d}{src.suffix.lower() or '.mp4'}"
+    shutil.copyfile(src, dest)
+    v = {"id": f"v{n:03d}", "archivo": f"videos/{dest.name}", "notas": notas, "chips": chips or [],
+         "fecha": datetime.now().date().isoformat(), "duracion": duracion}
+    idx["videos"].append(v)
+    _save(INDEX, idx)
+    return v
+
+
 # ---------- recorte ----------
 _cache = {}
 
@@ -210,12 +252,18 @@ def recorte(f: dict, w: int, h: int, dy: float = 0.0) -> Image.Image:
 # ---------- línea de comandos ----------
 # python biblioteca.py --cliente demo lista
 # python biblioteca.py --cliente demo añadir foto1.jpg foto2.jpg --notas "hogaza recién hecha" --chips producto
+# python biblioteca.py --cliente demo añadir-video clip.mp4 --notas "sacando el pan del horno"
 def main():
     import argparse
     import shutil
     ap = argparse.ArgumentParser(description="Biblioteca de fotos del cliente")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("lista")
+    v = sub.add_parser("añadir-video")
+    v.add_argument("archivo")
+    v.add_argument("--notas", default="")
+    v.add_argument("--chips", nargs="*", default=[])
+    v.add_argument("--duracion", type=float)
     a = sub.add_parser("añadir")
     a.add_argument("archivos", nargs="+")
     a.add_argument("--notas", default="")
@@ -226,7 +274,13 @@ def main():
     if args.cmd == "lista":
         for f in fotos():
             print(f"{f['id']}  {f['origen']:7} {f['archivo']:30} {f.get('notas', '')[:50]}")
-        print(f"{len(fotos())} fotos en {DIR}")
+        for v in videos():
+            print(f"{v['id']}  vídeo   {v['archivo']:30} {v.get('notas', '')[:50]}")
+        print(f"{len(fotos())} fotos y {len(videos())} vídeos en {DIR}")
+        return
+    if args.cmd == "añadir-video":
+        v = alta_video(Path(args.archivo), args.notas, args.chips, args.duracion)
+        print(f"✓ {v['id']} ← {Path(args.archivo).name}")
         return
     DIR.mkdir(parents=True, exist_ok=True)
     for src in args.archivos:

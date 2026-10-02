@@ -166,7 +166,7 @@ def resolve_media(post: dict) -> list[Path]:
     files = []
     for f in post["files"]:
         p = Path(f)
-        files.append(p if p.is_absolute() else config.MEDIA_DIR / p)
+        files.append(p if p.is_absolute() else Path(os.path.normpath(config.MEDIA_DIR / p)))   # admite ../content/avisos/
     missing = [str(p) for p in files if not p.exists()]
     if missing:
         raise FileNotFoundError(f"Faltan archivos para '{post['id']}': {missing}  (¿has ejecutado render.py?)")

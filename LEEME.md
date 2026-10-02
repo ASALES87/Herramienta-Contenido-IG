@@ -19,6 +19,22 @@ Doble clic en **`Abrir panel.cmd`** (o `python panel/servidor.py`) → se abre h
   (la tarea de tandas los aplica y ejecuta `tandas.py rehacer`).
 - La consola de abajo enseña lo que hace el motor en cada botón.
 Solo funciona en este ordenador (127.0.0.1), no publica en Instagram, no activa clientes y no muestra tokens.
+
+### App «Enviar foto» del cliente (`/f/<id>`)
+Página para el móvil del cliente, con su marca: **foto** (cámara o galería, varias a la vez, se reducen a 2160 px en
+el móvil) con texto, temas rápidos y «esta semana»; **vídeo** de hasta 60 s para sus reels; **aviso urgente**
+(«Hoy cerramos a las 14:00»), que sale como historia con su marca ese mismo día sin esperar a la tanda (vista previa
+antes de publicarlo; se puede cancelar desde el panel). Abajo ve lo que ha enviado y el enlace a revisar su contenido.
+- Acceso: enlace privado + PIN de 4 cifras (en la ficha del cliente → «Fotos del cliente»; se guardan en `alta/acceso.json`,
+  fuera de git). El PIN se pide una vez por móvil; 5 fallos bloquean 15 min. «Nuevo enlace y PIN» anula el anterior.
+- Probarla con el móvil: **`Abrir panel (con móvil).cmd`** (misma wifi; Windows puede preguntar por el firewall: permitir
+  en redes privadas) y escanear el QR de la ficha. Desde otro aparato solo se abren `/f/<id>` y `/c/<id>` con sesión;
+  el panel interno sigue siendo solo de este ordenador.
+- Dónde acaba: fotos → `biblioteca/` (con su texto en `notas`); vídeos → `biblioteca/videos/` (los usa `reels.py`, uno
+  por reel); avisos → `content/avisos.json` + imagen en `content/avisos/` + calendario; todo queda en `content/envios.json`.
+  La tarea de tandas convierte las fotos con texto en publicaciones.
+- Pendiente para clientes reales: servirla desde la nube (Cloudflare) con https y guardar fotos y vídeos en R2, para que
+  funcione fuera de casa y GitHub Actions tenga las fotos al publicar.
 Para crecer: todo pasa por la API JSON del servidor (`/api/...`); las mismas páginas podrán servirse desde la nube
 con un enlace privado por cliente.
 
@@ -54,6 +70,7 @@ motor/todos.py      lo que usan los workflows: publicar/simular todos, diario, h
 tareas/tandas.md    texto de la tarea programada de Claude que escribe las tandas
 panel/              panel local: servidor.py (API + páginas), panel.html, cliente.html, asistente.html
 motor/tanda_ejemplo.py  tanda de relleno para clientes de ensayo (probar el flujo sin escribir contenido)
+motor/avisos.py     avisos urgentes del cliente: historia con su marca fuera de las tandas
 sincronizar.ps1     sube a GitHub lo que escribe la tarea (como en Kodomo)
 motor/tandas.py     estado de contenido de todos los clientes, cerrar y aprobar tandas
 motor/tokens.py     renovación de tokens de Instagram y aviso del GH_PAT

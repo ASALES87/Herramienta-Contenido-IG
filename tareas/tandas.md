@@ -18,7 +18,10 @@ Eres la tarea de tandas de **Herramienta Contenido IG**. Trabaja en la carpeta d
    a. Lee `clientes/<id>/content/GUIA_TANDAS.md` (voz, pilares y reparto, rigor, prohibidos, fechas fuertes),
       `content/aprendizajes.md` si existe (qué funciona mejor), `content/plan.json` (ritmo) y `content/posts.json`
       (no repitas títulos ni ideas ya publicadas).
-   b. Mira `clientes/<id>/biblioteca/index.json`: si hay fotos con notas que encajen con un post, asígnala con `"foto": "<id>"`.
+   b. Mira `clientes/<id>/biblioteca/index.json` y `content/envios.json` (lo que manda el cliente desde la app
+      «Enviar foto»): cada foto propia nueva con texto merece su post, usando su texto como punto de partida y
+      `"foto": "<id>"`; las marcadas «esta semana» van con `"fecha"` en los primeros días de la tanda. Los vídeos
+      propios (`"videos"`) se usan solos en los reels; describe en el post lo que se ve en el vídeo.
    c. Busca en la web 3–5 temas de actualidad o fechas del periodo que encajen con el negocio y su zona.
    d. Escribe los posts para `dias_por_tanda` días con el ritmo de `plan.json`, siguiendo el formato y los límites
       de la guía. Ids `t<AAMM>-NN` (año y mes de la primera fecha). Los posts ligados a un día llevan `"fecha"`.

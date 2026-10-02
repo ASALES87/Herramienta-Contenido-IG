@@ -74,6 +74,11 @@ th{font-size:12px;color:var(--muted);font-weight:600}
 .drop{border:2px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--muted);cursor:pointer}
 .drop.over{border-color:var(--pri);color:var(--pri)}
 .check{white-space:pre-wrap;font-size:13px;line-height:1.6}
+.app-card{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;background:var(--soft);border-radius:12px;padding:14px}
+.qr{width:150px;height:150px;flex:none;background:#fff;border-radius:10px;display:grid;place-items:center;padding:6px}
+.qr svg{width:100%;height:100%}
+.pinv{font-family:var(--mono);letter-spacing:2px}
+code.url{font-size:12px;word-break:break-all}
 .check .li{display:block}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 /* consola */
@@ -119,6 +124,7 @@ th{font-size:12px;color:var(--muted);font-weight:600}
 <div id="visor"><div class="in" id="visor-in"></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 const $=(s,el=document)=>el.querySelector(s), $$=(s,el=document)=>[...el.querySelectorAll(s)];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -265,7 +271,25 @@ function pintarCliente(){
 
   <div class="card" id="sec-fotos"><h3><span class="n">3</span> Fotos del cliente</h3>
     <div class="row" style="margin-bottom:10px"><span class="muted">Nivel de fotos: <b>${esc(((d.marca.fotos||{}).nivel)||"auto")}</b>, como mucho «${esc(((d.marca.fotos||{}).nivel_max)||"—")}». Prefiere: ${esc(((d.marca.contenido_propio||{}).preferencia)||"—")}. Cuantas más fotos libres, más publicaciones con foto.</span></div>
-    <div class="drop" id="drop-fotos">Arrastra fotos aquí o haz clic (JPG/PNG). Se guardan en su biblioteca, a 2160 px.</div>
+    <div class="app-card">
+      <div class="qr" id="qr"></div>
+      <div style="flex:1;min-width:240px">
+        <b>App «Enviar foto» del cliente</b>
+        <p class="muted" style="margin:4px 0 8px">Desde su móvil: hace la foto, escribe qué contar y la envía. También vídeos cortos y avisos urgentes (salen como historia ese día).
+          Entra con su enlace privado y el PIN <b class="pinv">${esc(d.app.pin)}</b>.</p>
+        ${d.app.red?`<p style="margin:0 0 8px">Escanea el QR con el móvil (misma wifi):<br><code class="url">${esc(d.app.red)}</code></p>`
+          :`<p class="muted" style="margin:0 0 8px">Para probarla con el móvil, abre el panel con <b>«Abrir panel (con móvil).cmd»</b>: aparecerá aquí un QR.</p>`}
+        <div class="row"><a class="btn" href="${esc(d.app.local)}" target="_blank" rel="noopener">Abrir aquí ↗</a>
+          <button class="btn" id="b-copiar-app">Copiar enlace</button><button class="btn" data-a="acceso_nuevo">Nuevo enlace y PIN</button></div>
+      </div>
+    </div>
+    ${d.envios.length?`<h4 style="margin:16px 0 6px">Lo que ha enviado desde la app</h4><table><tr><th>Cuándo</th><th>Qué</th><th>Texto</th><th>Estado</th></tr>
+      ${d.envios.slice(0,12).map(e=>`<tr><td class="muted">${fecha(e.fecha)}</td><td>${e.tipo==="aviso"?"📣 Aviso":e.tipo==="video"?"🎬 Vídeo":"📷 "+(e.archivos||[]).length+" foto(s)"}</td>
+        <td>${esc(e.texto||"—")}${(e.chips||[]).length?` <span class="muted">· ${esc(e.chips.join(", "))}</span>`:""}${e.cuando==="semana"?` <span class="chip warn">esta semana</span>`:""}</td>
+        <td>${e.tipo==="aviso"?`${e.img?`<a href="${esc(e.img)}" target="_blank">ver</a> · `:""}${esc(e.estado)} ${e.publish_at?`<span class="muted">${fecha(e.publish_at)}</span>`:""}
+          ${e.estado==="programado"?`<button class="btn" style="padding:2px 8px" data-cancelar="${esc(e.aviso)}">Cancelar</button>`:""}`:`<span class="chip ok">en biblioteca</span>`}</td></tr>`).join("")}</table>`:""}
+    ${d.videos.length?`<h4 style="margin:16px 0 6px">Vídeos para reels (${d.videos.length})</h4><div class="thumbs">${d.videos.map(v=>`<figure><video src="${esc(v.url)}" muted controls preload="metadata" style="width:100%;border-radius:10px"></video><figcaption>${esc(v.id)} · ${esc(v.notas||"")}</figcaption></figure>`).join("")}</div>`:""}
+    <div class="drop" id="drop-fotos" style="margin-top:14px">También puedes arrastrar fotos aquí o hacer clic (JPG/PNG). Se guardan en su biblioteca, a 2160 px.</div>
     <input type="file" id="in-fotos" accept="image/*" multiple hidden>
     <div class="thumbs" style="margin-top:12px">${d.fotos.map(f=>f.url?`<figure><img src="${esc(f.url)}" loading="lazy" data-zoom><figcaption>${esc(f.id)} · ${esc(f.origen)}${f.notas?" · "+esc(f.notas):""}</figcaption></figure>`:"").join("")}</div></div>
 
@@ -313,12 +337,20 @@ function pintarCliente(){
   $$(".cal-item").forEach(el=>el.onclick=()=>verPost(d.proximas[+el.dataset.i]));
   const vm=$("#b-ver-mas"); if(vm) vm.onclick=()=>{ VER_MAS=true; pintarCliente(); $("#sec-publicacion").scrollIntoView(); };
   $("#ver-datos").onchange=e=>{ VER_DATOS=e.target.checked; pintarCliente(); $("#sec-publicacion").scrollIntoView(); };
+  const bca=$("#b-copiar-app"); if(bca) bca.onclick=()=>{ navigator.clipboard.writeText(d.app.red||d.app.local); toast("Enlace de la app copiado"); };
+  $$("[data-cancelar]").forEach(b=>b.onclick=()=>{ if(confirm("¿Cancelar este aviso? No se publicará.")) acc(b,"cancelar_aviso",{id:b.dataset.cancelar}); });
+  pintarQR(d.app.red||d.app.local);
   const be=$("#b-ensayo"); if(be) be.onclick=()=>acc(be,"ensayo",{valor:!d.plan.ensayo});
   const bc=$("#b-copiar-enlace"); if(bc) bc.onclick=()=>{ navigator.clipboard.writeText(location.origin+d.vista_cliente); toast("Enlace copiado (solo funciona en este ordenador por ahora)"); };
   const drop=$("#drop-fotos"), inp=$("#in-fotos");
   drop.onclick=()=>inp.click(); inp.onchange=()=>subir([...inp.files]);
   drop.ondragover=e=>{e.preventDefault();drop.classList.add("over")}; drop.ondragleave=()=>drop.classList.remove("over");
   drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over"); subir([...e.dataTransfer.files].filter(f=>f.type.startsWith("image/")));};
+}
+function pintarQR(url){
+  const el=$("#qr"); if(!el) return;
+  if(window.qrcode){ const q=qrcode(0,"M"); q.addData(url); q.make(); el.innerHTML=q.createSvgTag({cellSize:4,margin:2,scalable:true}); }
+  else el.innerHTML=`<span class="muted" style="font-size:12px">QR sin conexión a internet</span>`;
 }
 function pintarChecklist(md){
   if(!md) return `<span class="muted">Sin checklist.</span>`;

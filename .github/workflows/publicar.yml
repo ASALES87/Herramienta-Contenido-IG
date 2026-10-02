@@ -9,7 +9,6 @@ name: Publicar en Instagram (todos los clientes)
 # Solo publica clientes activos (plan.json → "activo": true) y nunca tandas pendientes de aprobación.
 # Lo que llega más de plan.json → retraso_max_horas tarde no se publica: pasa al siguiente hueco libre y se avisa.
 # Las horas se regeneran con:  python motor/todos.py horarios --escribir   (lo hace alta.py al dar de alta)
-on:  python motor/todos.py horarios --escribir   (lo hace alta.py al dar de alta)
 on:
   schedule:
     # >>> horarios (generado por motor/todos.py horarios; no editar a mano)
