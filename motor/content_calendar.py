@@ -2,9 +2,15 @@
 
 Las horas de content_calendar.json están en hora de Madrid (campo "timezone"),
 así funciona igual en tu PC que en GitHub Actions (que va en UTC).
+
+Retrasos (lección de Kodomo, oct-2026): si una publicación llega más de plan.json → "retraso_max_horas" (3 h por
+defecto; 0 = sin límite) tarde, no se publica fuera de hora: se pasa al siguiente hueco libre (una de las horas del
+plan del cliente sin otra publicación) y se avisa. El cambio se guarda en content/reprogramados.json
+({id: nueva fecha}) para que no lo pise planificar.py al añadir tandas.
 """
 import json
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -38,8 +44,93 @@ def mark_published(post_id: str, media_id: str, permalink: str = "") -> None:
     config.PUBLISHED_LOG.write_text(json.dumps(log, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def _when(p: dict) -> datetime:
-    return datetime.fromisoformat(p["publish_at"]).replace(tzinfo=tz())
+REPROGRAMADOS = config.BASE_DIR / "content" / "reprogramados.json"
+RETRASO_DEF_H = 3
+
+
+def load_reprogramados() -> dict:
+    try:
+        return json.loads(REPROGRAMADOS.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _hora_efectiva(p: dict, rep: dict | None = None) -> str:
+    rep = load_reprogramados() if rep is None else rep
+    return (rep.get(p["id"]) or {}).get("publish_at") or p["publish_at"]
+
+
+def _when(p: dict, rep: dict | None = None) -> datetime:
+    return datetime.fromisoformat(_hora_efectiva(p, rep)).replace(tzinfo=tz())
+
+
+def _plan() -> dict:
+    try:
+        return json.loads((config.BASE_DIR / "content" / "plan.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def retraso_max_horas() -> float:
+    v = _plan().get("retraso_max_horas", RETRASO_DEF_H)
+    return float(v or 0)
+
+
+def horas_plan() -> list[str]:
+    plan = _plan()
+    hs = {(plan.get(k) or {}).get("hora") for k in ("carrusel", "dato", "pregunta", "tu_turno", "reels")}
+    return sorted(h for h in hs if h) or ["08:00", "13:30"]
+
+
+def _siguiente_hueco(desde: datetime, ocupadas: set) -> datetime:
+    """Primera hora del plan posterior a «desde» en la que el cliente no tiene ya otra publicación."""
+    dia = desde.date()
+    for _ in range(120):
+        for h in horas_plan():
+            hh, mm = map(int, h.split(":"))
+            t = datetime(dia.year, dia.month, dia.day, hh, mm, tzinfo=tz())
+            if t > desde and t.strftime("%Y-%m-%dT%H:%M") not in ocupadas:
+                return t
+        dia += timedelta(days=1)
+    raise RuntimeError("No hay huecos libres en los próximos 120 días")
+
+
+def reprogramar_atrasados(now: datetime | None = None, persist: bool = True) -> list[dict]:
+    """Pasa al siguiente hueco libre lo que llega más de retraso_max_horas tarde. Devuelve los cambios
+    [{id, type, antes, ahora, retraso_h}]. Con persist=False solo informa (modo simular)."""
+    limite = retraso_max_horas()
+    if not limite:
+        return []
+    now = now or datetime.now(tz())
+    rep = load_reprogramados()
+    done = load_published()
+    stop = bloqueados()
+    cal = load_calendar()
+    pend = [p for p in cal if p["id"] not in done and p["id"] not in stop and not p.get("skip")]
+    tarde = sorted((p for p in pend if _when(p, rep) < now - timedelta(hours=limite)), key=lambda p: _when(p, rep))
+    if not tarde:
+        return []
+    ocupadas = {_hora_efectiva(p, rep)[:16] for p in cal if p["id"] not in done}
+    cambios = []
+    for p in tarde:
+        antes = _when(p, rep)
+        nueva = _siguiente_hueco(now, ocupadas)
+        ocupadas.add(nueva.strftime("%Y-%m-%dT%H:%M"))
+        cambios.append({"id": p["id"], "type": p["type"], "antes": antes.strftime("%Y-%m-%dT%H:%M"),
+                        "ahora": nueva.strftime("%Y-%m-%dT%H:%M"),
+                        "retraso_h": round((now - antes).total_seconds() / 3600, 1)})
+        rep[p["id"]] = {"publish_at": nueva.strftime("%Y-%m-%dT%H:%M"), "original": p["publish_at"],
+                        "motivo": f"llegó {cambios[-1]['retraso_h']} h tarde (máx. {limite:g} h)",
+                        "cuando": now.isoformat(timespec="seconds")}
+    if persist:
+        REPROGRAMADOS.write_text(json.dumps(rep, indent=2, ensure_ascii=False), encoding="utf-8")
+        avisos = os.getenv("AVISOS_FILE")
+        if avisos:   # GitHub Actions: se convierte en un aviso (issue) al final de la ejecución
+            with open(avisos, "a", encoding="utf-8") as f:
+                for c in cambios:
+                    f.write(f"- **{config.C.ID}** · `{c['id']}` ({c['type']}) debía salir el {c['antes'].replace('T', ' ')} "
+                            f"y llegó {c['retraso_h']} h tarde → pasa al **{c['ahora'].replace('T', ' ')}**\n")
+    return cambios
 
 
 def bloqueados() -> set:
@@ -57,15 +148,17 @@ def due_posts(now: datetime | None = None) -> list[dict]:
     now = now or datetime.now(tz())
     done = load_published()
     stop = bloqueados()
-    out = [p for p in load_calendar() if p["id"] not in done and p["id"] not in stop and not p.get("skip") and _when(p) <= now]
-    return sorted(out, key=_when)
+    rep = load_reprogramados()
+    out = [p for p in load_calendar() if p["id"] not in done and p["id"] not in stop and not p.get("skip") and _when(p, rep) <= now]
+    return [dict(p, publish_at=_hora_efectiva(p, rep)) for p in sorted(out, key=lambda p: _when(p, rep))]
 
 
 def upcoming(n: int = 10) -> list[dict]:
     now = datetime.now(tz())
     done = load_published()
-    fut = [p for p in load_calendar() if p["id"] not in done and not p.get("skip") and _when(p) > now]
-    return sorted(fut, key=_when)[:n]
+    rep = load_reprogramados()
+    fut = [p for p in load_calendar() if p["id"] not in done and not p.get("skip") and _when(p, rep) > now]
+    return [dict(p, publish_at=_hora_efectiva(p, rep)) for p in sorted(fut, key=lambda p: _when(p, rep))[:n]]
 
 
 def resolve_media(post: dict) -> list[Path]:

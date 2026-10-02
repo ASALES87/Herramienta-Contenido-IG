@@ -1,0 +1,49 @@
+<!-- Añadido por panel/servidor.py al servir el asistente: conecta el final del asistente con el panel -->
+<style>
+#puente{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999;display:flex;gap:8px;align-items:center;
+  background:#1d2a24;color:#fff;padding:10px 12px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.25);font:500 14px/1.3 system-ui,sans-serif;max-width:calc(100% - 32px);flex-wrap:wrap;justify-content:center}
+#puente a{color:#cfe8da}
+#puente button{font:600 14px system-ui,sans-serif;border:0;border-radius:10px;padding:9px 14px;cursor:pointer;background:#7fd1a4;color:#10241a}
+#puente button[disabled]{opacity:.6;cursor:wait}
+#puente .sec{background:transparent;color:#fff;border:1px solid #ffffff55}
+#puente-msg{flex-basis:100%;text-align:center;font-size:13px;white-space:pre-wrap}
+</style>
+<div id="puente"><a href="/">← Panel</a><span id="puente-txt">Al terminar, podrás crear el cliente aquí mismo.</span></div>
+<script>
+(function(){
+  const box=document.getElementById("puente"), txt=document.getElementById("puente-txt");
+  let pintado=false;
+  function enFinal(){ try{ return S.step===STEPS.length-1; }catch(e){ return false; } }
+  async function crear(forzar){
+    const b=box.querySelectorAll("button"); b.forEach(x=>x.disabled=true);
+    let msg=document.getElementById("puente-msg"); if(!msg){ msg=document.createElement("div"); msg.id="puente-msg"; box.appendChild(msg); }
+    msg.textContent="Creando el cliente, muestras y catálogo… (unos segundos)";
+    try{
+      const r=await fetch("/api/alta",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ficha:buildRespuestas(),forzar})});
+      const j=await r.json();
+      if(j.ok&&j.cliente){ msg.textContent="✓ Cliente creado. Abriendo su ficha en el panel…"; setTimeout(()=>location.href="/#c="+encodeURIComponent(j.cliente),700); return; }
+      const existe=/ya existe/i.test(j.salida||"");
+      msg.textContent=(existe?"Ese cliente ya existe. ":"No se ha podido crear: ")+((j.salida||j.error||"").split("\n").slice(-3).join("\n"));
+      if(existe&&!document.getElementById("puente-forzar")){
+        const f=document.createElement("button"); f.id="puente-forzar"; f.className="sec"; f.textContent="Rehacerlo con estas respuestas";
+        f.onclick=()=>{ if(confirm("Se borrará el cliente que ya existe (también su contenido) y se creará de nuevo con estas respuestas. ¿Seguir?")) crear(true); };
+        box.insertBefore(f,msg);
+      }
+    }catch(e){ msg.textContent="El panel no responde. ¿Sigue abierta la ventana del panel?"; }
+    b.forEach(x=>x.disabled=false);
+  }
+  setInterval(()=>{
+    const fin=enFinal();
+    if(fin&&!pintado){
+      pintado=true;
+      let ok=true; try{ ok=listo(S.d); }catch(e){}
+      txt.textContent=ok?"Todo listo:":"Hay algún bloqueo en el diagnóstico, pero puedes crearlo igual para el ensayo:";
+      const b=document.createElement("button"); b.id="puente-crear"; b.textContent="Crear cliente en el panel"; b.onclick=()=>crear(false);
+      box.insertBefore(b,txt.nextSibling);
+    }else if(!fin&&pintado){
+      pintado=false; txt.textContent="Al terminar, podrás crear el cliente aquí mismo.";
+      box.querySelectorAll("button,#puente-msg").forEach(x=>x.remove());
+    }
+  },400);
+})();
+</script>

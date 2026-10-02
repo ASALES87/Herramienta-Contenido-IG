@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tu contenido de Instagram</title>
+<style>
+:root{--marca:#1f6f4a; --fondo:#f7f5f0; --acento:#d9822b; --ink:#1d2320; --muted:#6b736f; --line:#e6e2da; --panel:#fff; --ok:#1f8a55; --warn:#b7791f}
+@media (prefers-color-scheme: dark){ :root{--ink:#ecefed; --muted:#a0a8a4; --line:#2f3532; --panel:#1d2220; --fondo:#151917} }
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 130px}
+header{background:var(--marca);color:#fff;padding:22px 16px 26px}
+header .wrap{padding-bottom:0}
+header h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;opacity:.85}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:16px 0}
+.card h2{margin:0 0 6px;font-size:17px}
+.muted{color:var(--muted)}
+.perfil img{width:100%;border-radius:12px;display:block}
+.post{border-top:1px solid var(--line);padding:16px 0}
+.post:first-of-type{border-top:0;padding-top:4px}
+.post .cab{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.num{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--marca);color:#fff;font-weight:700}
+.slides{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.slides img,.slides video{flex:none;width:78%;max-width:340px;border-radius:12px;scroll-snap-align:start;background:#0001}
+.slides.vertical img,.slides.vertical video{width:52%;max-width:240px}
+.cap{white-space:pre-wrap;font-size:14px;margin-top:8px}
+details{margin-top:6px} summary{cursor:pointer;color:var(--muted);font-size:14px}
+.guion{font-size:14px;margin:6px 0 0;padding-left:18px}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 14px;border-radius:12px;font:600 15px system-ui,sans-serif;cursor:pointer}
+.btn.pri{background:var(--marca);border-color:var(--marca);color:#fff}
+.btn[disabled]{opacity:.6}
+.cambio{margin-top:8px}
+.cambio textarea{width:100%;min-height:70px;border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;background:var(--panel);color:var(--ink)}
+.cambio.abierto .pedir{display:none}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#0000000d;color:var(--muted)}
+.chip.ok{color:var(--ok);background:#1f8a5520} .chip.warn{color:var(--warn);background:#b7791f22}
+.barra{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));z-index:5}
+.barra .wrap{display:flex;gap:10px;align-items:center;padding-bottom:0}
+.barra .txt{flex:1;font-size:13px;color:var(--muted)}
+.ok-final{text-align:center;padding:30px 16px}
+.ok-final b{font-size:20px;display:block;margin-bottom:6px}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mini img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1 id="nombre">Tu contenido</h1><p id="sub">Cargando…</p></div></header>
+<div class="wrap" id="cuerpo"></div>
+<div class="barra" id="barra" hidden><div class="wrap"><span class="txt" id="barra-txt"></span><button class="btn" id="b-cambios" hidden>Enviar cambios</button><button class="btn pri" id="b-aprobar">Aprobar todo</button></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const DIAS=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"], MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const fecha=iso=>{ const d=new Date(iso.length<=10?iso+"T00:00":iso); return `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`+(iso.length>10?` · ${iso.slice(11,16)}`:""); };
+const CID=decodeURIComponent(location.pathname.split("/")[2]||"");
+let V=null;
+
+async function cargar(){
+  const r=await fetch("/api/c/"+encodeURIComponent(CID)); V=await r.json();
+  if(!r.ok){ $("#cuerpo").innerHTML=`<div class="card">No encontramos este enlace.</div>`; return; }
+  const c=V.colores||{};
+  if(c.principal) document.documentElement.style.setProperty("--marca",c.principal);
+  if(c.acento) document.documentElement.style.setProperty("--acento",c.acento);
+  document.title=`${V.nombre} · contenido de Instagram`;
+  $("#nombre").textContent=V.nombre;
+  pintar();
+}
+
+function media(p){
+  const vert=p.tipo!=="carousel";
+  const m=p.archivos.map(a=>a.tipo==="video"?`<video src="${esc(a.url)}" controls playsinline poster="${esc(a.poster||"")}"></video>`:`<img src="${esc(a.url)}" loading="lazy" alt="">`).join("");
+  return m?`<div class="slides ${vert?"vertical":""}">${m}</div>`:"";
+}
+const TXT={carousel:"Publicación",reel:"Reel (vídeo de 30 s)",story:"Historia"};
+
+function pintar(){
+  const R=V.revisar;
+  $("#sub").textContent=`@${V.instagram||""}`+(R?` · tienes contenido para revisar`:` · todo al día`);
+  let h="";
+  if(R){
+    const n=R.items.length;
+    if(R.esperando_cambios){
+      h+=`<div class="card"><h2>Estamos con tus cambios</h2><p class="muted">Nos pediste ${R.cambios.length} cambio(s). Cuando estén hechos, lo verás aquí actualizado para darle el visto bueno.</p></div>`;
+    }else{
+      h+=`<div class="card"><h2>Revisa tu contenido</h2><p>Del ${fecha(R.desde)} al ${fecha(R.hasta)}: <b>${n} publicaciones</b>. Si algo no te convence, pulsa «Pedir un cambio» en esa publicación y cuéntanos qué cambiarías.</p>
+        <p class="muted">Si todo está bien, pulsa «Aprobar todo». Si no nos dices nada, se aprueba sola en ${R.dias_para_aprobar} día(s).</p></div>`;
+    }
+    if(V.perfil) h+=`<div class="card perfil"><h2>Así quedará tu perfil</h2><img src="${esc(V.perfil)}" alt="Vista del perfil"></div>`;
+    h+=`<div class="card">`+R.items.map((p,i)=>`
+      <div class="post" id="p${p.n}"><div class="cab"><span class="num">${p.n}</span><div><b>${TXT[p.tipo]||p.tipo_txt}</b><div class="muted" style="font-size:13px">${fecha(p.fecha)}</div></div></div>
+        ${media(p)}
+        ${p.guion?`<details><summary>Qué se dice en el vídeo</summary><ol class="guion">${p.guion.filter(Boolean).map(g=>`<li>${esc(g)}</li>`).join("")}</ol></details>`:""}
+        ${p.tipo==="story"?`<div class="cap">${esc(p.titulo)}</div>`:`<details><summary>Texto de la publicación</summary><div class="cap">${esc(p.caption)}</div></details>`}
+        ${R.esperando_cambios?"":`<div class="cambio" data-i="${i}"><button class="btn pedir" type="button">Pedir un cambio</button><textarea hidden placeholder="¿Qué cambiarías en la ${p.n}? Ej.: «cambiad la foto», «el precio es 3,50 €»…"></textarea></div>`}
+      </div>`).join("")+`</div>`;
+  }else{
+    h+=`<div class="card ok-final"><b>Todo aprobado ✓</b><span class="muted">No tienes nada pendiente de revisar. Estas son tus próximas publicaciones.</span></div>`;
+  }
+  if(V.proximas.length){
+    h+=`<div class="card"><h2>${R?"Ya aprobadas":"Próximas publicaciones"}</h2><div class="mini">${V.proximas.map(p=>{const a=p.archivos[0]; return a?`<img src="${esc(a.poster||a.url)}" title="${esc(fecha(p.fecha))}" loading="lazy">`:"";}).join("")}</div></div>`;
+  }
+  $("#cuerpo").innerHTML=h;
+  document.querySelectorAll(".cambio").forEach(c=>{
+    const ta=c.querySelector("textarea");
+    c.querySelector(".pedir").onclick=()=>{ c.classList.add("abierto"); ta.hidden=false; ta.focus(); barra(); };
+    ta.oninput=barra;
+  });
+  $("#barra").hidden=!(R&&!R.esperando_cambios);
+  barra();
+}
+function cambios(){
+  return [...document.querySelectorAll(".cambio")].map(c=>{ const p=V.revisar.items[+c.dataset.i]; return {n:p.n,id:p.id,texto:c.querySelector("textarea").value.trim()}; }).filter(x=>x.texto);
+}
+function barra(){
+  if(!V||!V.revisar) return;
+  const n=cambios().length;
+  $("#b-cambios").hidden=!n; $("#b-aprobar").hidden=!!n;
+  $("#barra-txt").textContent=n?`${n} cambio(s) escritos`:`${V.revisar.items.length} publicaciones para revisar`;
+}
+async function enviar(body,btn){
+  btn.disabled=true;
+  try{
+    const r=await fetch(`/api/c/${encodeURIComponent(CID)}/respuesta`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const j=await r.json();
+    $("#cuerpo").insertAdjacentHTML("afterbegin",`<div class="card ok-final"><b>${j.ok?"¡Gracias!":"Ups"}</b><span>${esc(j.salida||j.error)}</span></div>`);
+    window.scrollTo({top:0,behavior:"smooth"});
+    if(j.ok) setTimeout(cargar,1800);
+  }finally{ btn.disabled=false; }
+}
+$("#b-aprobar").onclick=e=>{ if(confirm("¿Apruebas todas las publicaciones tal como están?")) enviar({tanda:V.revisar.tanda,accion:"aprobar"},e.target); };
+$("#b-cambios").onclick=e=>enviar({tanda:V.revisar.tanda,accion:"cambios",cambios:cambios()},e.target);
+cargar();
+</script>
+</body>
+</html>

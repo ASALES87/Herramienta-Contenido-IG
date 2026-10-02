@@ -1,6 +1,7 @@
 {
- "_nota": "Ritmo de publicación (hora de Madrid). planificar.py lo aplica a las tandas nuevas. Plan Estándar.",
+ "_nota": "Ritmo de publicación (hora de Madrid). planificar.py lo aplica a las tandas nuevas. Plan Estándar. retraso_max_horas: si algo llega más tarde, no se publica fuera de hora: pasa al siguiente hueco libre y se avisa (0 = sin límite).",
  "activo": false,
+ "retraso_max_horas": 3,
  "ritmo": "estandar",
  "carrusel": {"dias": ["lunes", "martes", "miercoles", "jueves", "viernes"], "hora": "13:30"},
  "dato": {"hora": "08:00"},

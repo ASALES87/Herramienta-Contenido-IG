@@ -6,7 +6,8 @@ Uso:  python pruebas/prueba_motor.py [--reel] [--conservar]
 
 Recorre: alta → posts → planificar → imágenes (sin fotos y con fotos) → mosaico sin colores vecinos iguales →
 catálogo de plantillas → cuaderno de revisión → tanda pendiente que bloquea la publicación → aprobación →
-publicación simulada. Termina con OK / FALLO por cada paso.
+publicación simulada → lecciones de producción de Kodomo (reintento «media not ready» sin duplicar, publicación
+atrasada al siguiente hueco libre, comprobación rápida de pendientes y latido). Termina con OK / FALLO por cada paso.
 """
 import json
 import shutil
@@ -83,6 +84,94 @@ def fotos_sinteticas(carpeta, n):
         im.save(p)
         rutas.append(p)
     return rutas
+
+
+def py(code):
+    """Ejecuta código con el motor del cliente de prueba cargado; devuelve (rc, salida)."""
+    pre = f"import sys,json;sys.argv=['x','--cliente','{CID}'];sys.path.insert(0,'motor');"
+    r = subprocess.run([PY, "-c", pre + code], cwd=ROOT, capture_output=True, text=True)
+    return r.returncode, (r.stdout + r.stderr).strip()
+
+
+def produccion():
+    """Lecciones de producción de Kodomo (oct-2026)."""
+    # 1) «media not ready» (9007/2207027): reintenta con espera creciente; si el contenedor ya está PUBLISHED, para
+    base = ("import instagram_api as ig;esperas=[];ig._sleep=esperas.append;n={'pub':0};"
+            "nr=lambda:ig.IGError(400,{'code':9007,'error_subcode':2207027,'message':'Media ID is not available'})\n")
+    rc, out = py(base + (
+        "def call(m,path,**k):\n"
+        " if path.endswith('media_publish'):\n"
+        "  n['pub']+=1\n"
+        "  if n['pub']<3: raise nr()\n"
+        "  return {'id':'M1'}\n"
+        " return {'status_code':'FINISHED'}\n"
+        "ig._call=call;print('RES',ig._publish('C1','x'),n['pub'],esperas)"))
+    paso("«Media not ready»: reintenta con espera creciente", rc == 0 and "RES M1 3 [10, 20]" in out, out.splitlines()[-1] if out else "")
+    rc, out = py(base + (
+        "def call(m,path,**k):\n"
+        " if path.endswith('media_publish'):\n"
+        "  n['pub']+=1; raise nr()\n"
+        " if path.endswith('/media'): return {'data':[{'id':'M9','caption':'x'}]}\n"
+        " return {'status_code':'FINISHED' if n['pub']<2 else 'PUBLISHED'}\n"
+        "ig._call=call;print('RES',ig._publish('C1','x'),n['pub'])"))
+    paso("«Media not ready»: si ya está PUBLISHED no reintenta (sin duplicados)", rc == 0 and "RES M9 2" in out, out.splitlines()[-1] if out else "")
+    rc, out = py(base + (
+        "def call(m,path,**k):\n"
+        " if path.endswith('media_publish'):\n"
+        "  n['pub']+=1; raise nr()\n"
+        " return {'status_code':'FINISHED'}\n"
+        "ig._call=call\n"
+        "try: ig._publish('C1','x')\n"
+        "except ig.IGError: print('RES',n['pub'],sum(esperas))"))
+    paso("«Media not ready»: máximo 8 reintentos", rc == 0 and "RES 9 360" in out, out.splitlines()[-1] if out else "")
+    rc, out = py(base + (
+        "def call(m,path,**k):\n"
+        " if path.endswith('media_publish'):\n"
+        "  n['pub']+=1; raise ig.IGError(400,{'code':190,'message':'token caducado'})\n"
+        " return {'status_code':'FINISHED'}\n"
+        "ig._call=call\n"
+        "try: ig._publish('C1','x')\n"
+        "except ig.IGError as e: print('RES',n['pub'],e.code,len(esperas))"))
+    paso("Otros errores de Instagram se lanzan tal cual", rc == 0 and "RES 1 190 0" in out, out.splitlines()[-1] if out else "")
+
+    # 2) Publicación atrasada: no sale fuera de hora, pasa al siguiente hueco libre y se avisa
+    calp = DIR / "content" / "content_calendar.json"
+    cal = json.loads(calp.read_text(encoding="utf-8"))
+    pub = json.loads((DIR / "content" / "published.json").read_text(encoding="utf-8")) if (DIR / "content" / "published.json").exists() else {}
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    ahora = datetime.now(ZoneInfo("Europe/Madrid"))
+    e = next(x for x in cal["posts"] if x["type"] == "carousel" and x["id"] not in pub)
+    e["publish_at"] = (ahora - timedelta(hours=5)).strftime("%Y-%m-%dT%H:%M")
+    calp.write_text(json.dumps(cal, ensure_ascii=False, indent=1), encoding="utf-8")
+    plan = json.loads((DIR / "content" / "plan.json").read_text(encoding="utf-8"))
+    plan["activo"] = True   # solo en esta copia de prueba (media_host «simulado»: nunca llama a Instagram)
+    (DIR / "content" / "plan.json").write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    try:
+        r = subprocess.run([PY, "motor/todos.py", "pendiente", "--cliente", CID], cwd=ROOT, capture_output=True, text=True)
+        paso("Comprobación rápida: hay algo pendiente", r.stdout.strip() == "si", r.stderr.strip().splitlines()[0] if r.stderr.strip() else "")
+        out = subprocess.run([PY, "motor/todos.py", "latido", "--cliente", CID], cwd=ROOT, capture_output=True, text=True).stdout
+        paso("Latido: avisa de lo que debía haber salido", e["id"] in out, f"{out.count('- **')} aviso(s)")
+        rc, out = sh("motor/publish.py", "run", "--dry-run")
+        rep = DIR / "content" / "reprogramados.json"
+        paso("Simular: avisa del retraso sin cambiar nada", rc == 0 and "se pasaría" in out and not rep.exists(),
+             next((l for l in out.splitlines() if "tarde" in l), "")[:110])
+        avisos = ROOT / "pruebas" / "_tmp" / "avisos.md"
+        r = subprocess.run([PY, "motor/publish.py", "run", "--max", "1", "--cliente", CID], cwd=ROOT, capture_output=True, text=True,
+                           env={**__import__("os").environ, "AVISOS_FILE": str(avisos)})
+        out = r.stdout + r.stderr
+        nuevo = json.loads(rep.read_text(encoding="utf-8")).get(e["id"], {}) if rep.exists() else {}
+        hora_ok = nuevo.get("publish_at", "")[11:] in {(plan.get(k) or {}).get("hora") for k in ("carrusel", "dato", "pregunta", "reels")}
+        futuro = nuevo.get("publish_at", "") > ahora.strftime("%Y-%m-%dT%H:%M")
+        libre = not any(x["publish_at"] == nuevo.get("publish_at") for x in cal["posts"] if x["id"] != e["id"])
+        paso("Atrasada > 3 h: pasa al siguiente hueco libre", hora_ok and futuro and libre and "[simulado]" not in out,
+             f"{e['id']}: {e['publish_at']} → {nuevo.get('publish_at')}")
+        paso("Atrasada: queda el aviso para GitHub", avisos.exists() and e["id"] in avisos.read_text(encoding="utf-8"))
+        r = subprocess.run([PY, "motor/todos.py", "pendiente", "--cliente", CID], cwd=ROOT, capture_output=True, text=True)
+        paso("Tras reprogramar, ya no está pendiente", e["id"] not in r.stderr, r.stderr.strip()[:110])
+    finally:
+        plan["activo"] = False
+        (DIR / "content" / "plan.json").write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
 
 
 def main():
@@ -162,6 +251,7 @@ def main():
         paso("Publicación simulada de todos los clientes de ensayo", rc == 0, out.strip().splitlines()[-1] if out.strip() else "")
         rc, out = sh("motor/publish.py", "next")
         paso("Publicar la siguiente en modo simulado", rc == 0 and "[simulado]" in out, out.strip().splitlines()[-1] if out.strip() else "")
+        produccion()
         if reel:
             r = [e["id"] for e in cal if e["type"] == "reel"][0]
             rc, out = sh("motor/reels.py", r)

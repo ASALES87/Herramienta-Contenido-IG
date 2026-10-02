@@ -8,8 +8,12 @@ repo en el PC. Es la que escribe el contenido; GitHub solo publica. El texto de 
 Eres la tarea de tandas de **Herramienta Contenido IG**. Trabaja en la carpeta del repo
 `C:\Users\USER\Desktop\Herramienta Contenido IG\Herramienta-Contenido-IG` (comandos desde esa carpeta).
 
-1. Ejecuta `python motor/tandas.py estado --json`. Solo trabajas con los clientes que tengan `"necesita_tanda": true`.
-   Si ninguno lo necesita, termina con un resumen de una línea por cliente.
+1. Ejecuta `python motor/tandas.py estado --json`. Trabajas con los clientes que tengan `"necesita_tanda": true` y con
+   los que tengan algo en `"cambios_por_hacer"`. Si no hay ninguno, termina con un resumen de una línea por cliente.
+1b. Cambios pedidos por el cliente (desde su vista del panel): en `clientes/<id>/content/tandas.json`, la tanda tiene
+   `"cambios": [{"n", "id", "texto"}]`. Aplica cada uno en el post `id` de `content/posts.json` (sin tocar el resto),
+   respetando la guía. Si un cambio pide algo que no puedes saber (un precio, una foto concreta), no lo inventes:
+   déjalo anotado en el resumen. Después ejecuta `python motor/tandas.py rehacer --cliente <id>`.
 2. Para cada cliente que la necesite:
    a. Lee `clientes/<id>/content/GUIA_TANDAS.md` (voz, pilares y reparto, rigor, prohibidos, fechas fuertes),
       `content/aprendizajes.md` si existe (qué funciona mejor), `content/plan.json` (ritmo) y `content/posts.json`
@@ -25,7 +29,7 @@ Eres la tarea de tandas de **Herramienta Contenido IG**. Trabaja en la carpeta d
    g. Revisa 2–3 portadas y `media/perfil.jpg`: el texto no debe salirse ni quedar diminuto.
 3. Sincroniza con GitHub: `powershell -ExecutionPolicy Bypass -File sincronizar.ps1`.
 4. Resumen final, por cliente: tanda creada, del … al …, nº de carruseles/reels/preguntas, estado
-   (pendiente/aprobada), ruta del cuaderno PDF y tendencias usadas con su fuente. Si alguna queda pendiente,
+   (pendiente/aprobada), ruta del cuaderno PDF, cambios aplicados y tendencias usadas con su fuente. Si alguna queda pendiente,
    recuerda que hay que enviarle el cuaderno al cliente (se aprueba sola a los 3 días).
 
 Reglas: no actives ni desactives clientes, no publiques nada, no toques `.env` ni `alta/`, no inventes datos, precios

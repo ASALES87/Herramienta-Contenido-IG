@@ -1,6 +1,7 @@
 name: Resumen diario (comentarios y métricas de cada cliente)
 
 # Cada día a las 21:45 (Madrid): un aviso por cliente con sus comentarios nuevos y, los lunes, su informe semanal.
+# Latido: si algo debía haber salido hace más de 30 min y no está en published.json → aviso (issue → email).
 # (Más adelante: enviarlo también al email del cliente, marca.json → email_avisos.)
 on:
   schedule:
@@ -47,9 +48,11 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(TZ=Europe/Madrid date +%H)" = "21" ]; then
             echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "ok=0" >> "$GITHUB_OUTPUT"; fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: steps.hora.outputs.ok == '1'
-      - uses: actions/setup-python@v5
+        with:
+          ref: main
+      - uses: actions/setup-python@v6
         if: steps.hora.outputs.ok == '1'
         with:
           python-version: "3.12"
@@ -80,6 +83,25 @@ jobs:
             gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" \
               --title "📊 $c · informe semanal · $(TZ=Europe/Madrid date '+%d/%m')" --body-file "$f"
           done
+      - name: Latido (¿falta algo por publicar?)
+        if: always() && steps.hora.outputs.ok == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 motor/todos.py latido --out "$RUNNER_TEMP/latido.md"
+          if [ -s "$RUNNER_TEMP/latido.md" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" \
+              --title "🫀 Latido: publicaciones que no han salido · $(TZ=Europe/Madrid date '+%d/%m')" \
+              --body-file "$RUNNER_TEMP/latido.md"
+          fi
+      - name: Avisar si ha fallado
+        if: failure() && steps.hora.outputs.ok == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" \
+            --title "⚠️ Falló el resumen diario ($(TZ=Europe/Madrid date '+%d/%m'))" \
+            --body "Detalle: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Guardar
         if: always() && steps.hora.outputs.ok == '1'
         run: |

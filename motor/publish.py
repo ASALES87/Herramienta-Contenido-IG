@@ -11,6 +11,8 @@ Uso:
   python publish.py carousel media/1.png media/2.png ... --caption "Texto"
   python publish.py photo-url https://... --caption "Texto"   (URL ya pública)
   python publish.py run [--dry-run] [--max 1]  Publica lo pendiente del calendario (solo si plan.json → "activo": true)
+                                               Lo que llega más de plan.json → retraso_max_horas tarde pasa al
+                                               siguiente hueco libre (content/reprogramados.json) y se avisa.
   python publish.py upcoming [10]              Muestra las próximas publicaciones
   python publish.py next                       Publica YA la siguiente pendiente (prueba)
 """
@@ -131,6 +133,9 @@ def cmd_run(args):
     if not args.dry_run and not C.activo():
         print(f"[{C.ID}] Cliente inactivo (plan.json → \"activo\": false): no se publica nada.")
         return
+    for c in cal.reprogramar_atrasados(persist=not args.dry_run):   # no publicar fuera de hora
+        print(f"⚠ {c['id']} ({c['type']}) llega {c['retraso_h']} h tarde (debía salir el {c['antes'].replace('T', ' ')}): "
+              f"{'se pasaría' if args.dry_run else 'pasa'} al siguiente hueco libre → {c['ahora'].replace('T', ' ')}")
     posts = cal.due_posts()
     if not posts:
         print("Nada pendiente de publicar.")

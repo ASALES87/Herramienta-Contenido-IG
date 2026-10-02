@@ -190,7 +190,27 @@ Límites: `title` 70 · `h` 60 · `body` 260 · `fact` 170 · `cta` 80 · `cta_s
 
 # ---------- checklist ----------
 
-def checklist(r: dict, marca: dict, ficha: Path) -> str:
+def produccion(cid: str, plan: dict) -> list[str]:
+    """Pasos de puesta en producción (lecciones de Kodomo, oct-2026). Ver LEEME → «Publicación en producción»."""
+    horas = sorted({(plan.get(k) or {}).get("hora") for k in ("carrusel", "dato", "pregunta", "tu_turno", "reels")} - {None})
+    return [
+        f"Lanzador externo (cron-job.org, uno solo para todos los clientes): comprobar que se dispara a las horas de este "
+        f"cliente (Europe/Madrid): **{', '.join(horas) or '—'}**. Si falta alguna, añadirla al mismo lanzador desde el "
+        f"navegador normal (cron-job.org bloquea el navegador de Claude)",
+        "Subir a GitHub `publicar.yml` con los horarios y secretos que ha escrito `alta.py` (el cron de GitHub queda de respaldo)",
+        f"Retraso máximo acordado: `retraso_max_horas` en `content/plan.json` (ahora {plan.get('retraso_max_horas', 3)} h). "
+        f"Lo que llegue más tarde no se publica fuera de hora: pasa al siguiente hueco libre y llega un aviso",
+        f"Simular: Actions → «Publicar en Instagram» → modo `simular`, cliente `{cid}` → en verde y sin avisos raros",
+        f"Comprobación rápida: `python motor/todos.py pendiente --cliente {cid}` responde «si»/«no» en segundos",
+        f"Primera publicación real SOLO con confirmación explícita: modo `publicar_siguiente`, cliente `{cid}`. "
+        f"Comprobar que sale una sola vez en Instagram y que queda en `published.json` (commit «Publicado · {cid}»)",
+        f"Activar: `\"activo\": true` en `clientes/{cid}/content/plan.json` y subirlo a GitHub",
+        "Avisos: confirmar que llegan por email los issues de GitHub (repo en «Watch») y los fallos de cron-job.org",
+        "Al día siguiente de activar: el latido del resumen diario no avisa de nada pendiente y no hay issues abiertos",
+    ]
+
+
+def checklist(r: dict, marca: dict, ficha: Path, plan: dict | None = None) -> str:
     cid, ID = marca["id"], marca["id"].upper().replace("-", "_")
     L = []
     if r.get("tieneIG") == "no":
@@ -218,11 +238,12 @@ def checklist(r: dict, marca: dict, ficha: Path) -> str:
     L += ["Enseñarle las muestras (`media/muestras/`) y el catálogo de plantillas (`media/catalogo.jpg`); ajustar si pide cambios",
           "Firmar el contrato de servicio y el de encargado del tratamiento (RGPD)",
           "Repasar el borrador de `content/GUIA_TANDAS.md`",
-          "Generar la primera tanda de 35 días y enviarla a revisión",
-          f"Activar: `\"activo\": true` en `clientes/{cid}/content/plan.json`"]
+          "Generar la primera tanda de 35 días y enviarla a revisión"]
     diag = "\n".join(f"- [{x['estado'].upper()}] {x['area']}: {x['situacion']} → {x['solucion']}" for x in r.get("_diagnostico", []))
     return (f"# Checklist de alta · {marca['nombre']} (`{cid}`)\n\nGenerada por `alta.py` desde `{ficha.name}`.\n\n"
             + "\n".join(f"- [ ] {x}" for x in L)
+            + "\n\n## Publicación en producción (lecciones de Kodomo)\n"
+            + "\n".join(f"- [ ] {x}" for x in produccion(cid, plan or {}))
             + (f"\n\n## Diagnóstico del asistente\n{diag}\n" if diag else "\n"))
 
 
@@ -298,7 +319,7 @@ def main():
     (dest / "biblioteca" / "index.json").write_text('{"fotos": []}\n', encoding="utf-8")
     (dest / "content" / "GUIA_TANDAS.md").write_text(guia(r, base, p0), encoding="utf-8")
     (dest / "content" / "muestras.json").write_text(json.dumps(muestras(r, base), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    (dest / f"CHECKLIST_{cid}.md").write_text(checklist(r, base, ficha), encoding="utf-8")
+    (dest / f"CHECKLIST_{cid}.md").write_text(checklist(r, base, ficha, p0), encoding="utf-8")
     priv = dest / "alta"
     priv.mkdir(exist_ok=True)
     shutil.copy(ficha, priv / "respuestas.json")   # datos personales: carpeta excluida de git

@@ -1,9 +1,15 @@
 name: Publicar en Instagram (todos los clientes)
 
-# Se lanza a las horas de publicación de los clientes (hora de Madrid, en UTC con verano/invierno) y publica
-# lo que ya ha llegado a su hora: como mucho 1 publicación por cliente y pasada; lo demás sale en la siguiente.
+# Lo lanza un LANZADOR EXTERNO EXACTO (cron-job.org) a las horas de los clientes, con una llamada a la API de GitHub:
+#   POST https://api.github.com/repos/<usuario>/Herramienta-Contenido-IG/actions/workflows/publicar.yml/dispatches
+#   body {"ref":"main","inputs":{"modo":"programado"}}
+# Un solo lanzador para todos los clientes: esta ejecución recorre los activos y publica lo que toca a cada uno
+# (como mucho 1 por cliente y pasada). El cron de GitHub de abajo queda solo como RESPALDO (puede llegar con horas
+# de retraso o no lanzarse). Si nada está pendiente, termina en segundos sin instalar nada.
 # Solo publica clientes activos (plan.json → "activo": true) y nunca tandas pendientes de aprobación.
+# Lo que llega más de plan.json → retraso_max_horas tarde no se publica: pasa al siguiente hueco libre y se avisa.
 # Las horas se regeneran con:  python motor/todos.py horarios --escribir   (lo hace alta.py al dar de alta)
+on:  python motor/todos.py horarios --escribir   (lo hace alta.py al dar de alta)
 on:
   schedule:
     # >>> horarios (generado por motor/todos.py horarios; no editar a mano)
@@ -15,9 +21,9 @@ on:
   workflow_dispatch:
     inputs:
       modo:
-        description: "simular = no publica nada (incluye clientes de ensayo) · publicar_siguiente = publica YA la siguiente del cliente indicado"
+        description: "simular = no publica nada (incluye clientes de ensayo) · publicar_siguiente = publica YA la siguiente del cliente indicado · programado = lo usa el lanzador externo"
         type: choice
-        options: [simular, publicar_siguiente]
+        options: [simular, publicar_siguiente, programado]
         default: simular
       cliente:
         description: "id del cliente (vacío = todos; obligatorio para publicar_siguiente)"
@@ -59,15 +65,35 @@ jobs:
       IG_USER_ID_TALLER_HERMANOS_RUIZ: ${{ secrets.IG_USER_ID_TALLER_HERMANOS_RUIZ }}
       # <<< secretos
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # Siempre la última versión de main: published.json al día (nunca duplicar)
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+
+      # Antes de instalar nada: si no hay nada pendiente, termina aquí (ahorra minutos de Actions)
+      - name: ¿Hay algo pendiente?
+        id: pend
+        env:
+          MODO: ${{ inputs.modo }}
+        run: |
+          if [ "$MODO" = "simular" ] || [ "$MODO" = "publicar_siguiente" ]; then
+            echo "hay=si" >> "$GITHUB_OUTPUT"
+          else
+            hay=$(python3 motor/todos.py pendiente)   # si falla, la ejecución sale en rojo (y avisa)
+            echo "hay=$hay" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v6
+        if: steps.pend.outputs.hay == 'si'
         with:
           python-version: "3.12"
           cache: pip
       - name: Instalar dependencias
+        if: steps.pend.outputs.hay == 'si'
         run: pip install -r requirements.txt
 
       - name: Instalar ffmpeg (solo si hay un reel a punto)
+        if: steps.pend.outputs.hay == 'si'
         env:
           MODO: ${{ inputs.modo }}
         run: |
@@ -76,36 +102,59 @@ jobs:
           fi
 
       - name: Publicar lo que toca
+        if: steps.pend.outputs.hay == 'si'
         env:
           MODO: ${{ inputs.modo }}
           CLIENTE_ELEGIDO: ${{ inputs.cliente }}
+          AVISOS_FILE: ${{ runner.temp }}/avisos.md
         run: |
+          git config user.name "contenido-bot"
+          git config user.email "contenido-bot@users.noreply.github.com"
           if [ "$MODO" = "simular" ]; then
             if [ -n "$CLIENTE_ELEGIDO" ]; then python motor/todos.py publicar --simular --cliente "$CLIENTE_ELEGIDO"
             else python motor/todos.py publicar --simular; fi
           elif [ "$MODO" = "publicar_siguiente" ]; then
-            python motor/todos.py siguiente --cliente "$CLIENTE_ELEGIDO"
+            python motor/todos.py siguiente --cliente "$CLIENTE_ELEGIDO" --commit
           else
-            python motor/todos.py publicar
+            # programado (lanzador externo) o cron de respaldo: commit de published.json justo después de cada cliente
+            python motor/todos.py publicar --commit
           fi
 
       - name: Guardar registro (publicados, fotos y diseño decididos)
-        if: always()
+        if: always() && steps.pend.outputs.hay == 'si'
         run: |
           git config user.name "contenido-bot"
           git config user.email "contenido-bot@users.noreply.github.com"
-          for f in clientes/*/content/published.json clientes/*/content/videos_usados.json \
+          for f in clientes/*/content/published.json clientes/*/content/reprogramados.json clientes/*/content/videos_usados.json \
                    clientes/*/content/fotos_asignadas.json clientes/*/content/diseno.json clientes/*/biblioteca/index.json; do
             [ -f "$f" ] && git add "$f"
           done
           git diff --cached --quiet || (git commit -m "Publicado en Instagram [skip ci]" && git pull --rebase -q && git push)
 
-      - name: Avisar si ha fallado
-        if: failure() && github.event_name == 'schedule'
+      - name: Avisar de publicaciones reprogramadas por retraso
+        if: always() && steps.pend.outputs.hay == 'si'
         env:
           GH_TOKEN: ${{ github.token }}
+          AVISOS_FILE: ${{ runner.temp }}/avisos.md
+        run: |
+          if [ -s "$AVISOS_FILE" ]; then
+            printf '%s\n\n%s\n' "Han llegado tarde y NO se han publicado fuera de hora; pasan al siguiente hueco libre:" \
+              "$(cat "$AVISOS_FILE")" > "$RUNNER_TEMP/aviso_retraso.md"
+            echo "Ejecución: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> "$RUNNER_TEMP/aviso_retraso.md"
+            gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" \
+              --title "🕒 Publicaciones reprogramadas por retraso ($(TZ=Europe/Madrid date '+%d/%m %H:%M'))" \
+              --body-file "$RUNNER_TEMP/aviso_retraso.md"
+          fi
+
+      - name: Avisar si ha fallado
+        if: failure() && (github.event_name == 'schedule' || inputs.modo == 'programado')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ORIGEN: ${{ github.event_name == 'schedule' && 'cron de GitHub (respaldo)' || 'lanzador externo (cron-job.org)' }}
         run: |
           gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" \
             --title "⚠️ Falló una publicación ($(TZ=Europe/Madrid date '+%d/%m %H:%M'))" \
-            --body "Detalle: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
-          Lo pendiente se reintenta en la siguiente franja. Cierra este aviso cuando esté resuelto."
+            --body "Origen: $ORIGEN
+          Detalle: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          Lo pendiente se reintenta en la siguiente franja (y si llega más de retraso_max_horas tarde, pasa al siguiente hueco libre).
+          Cierra este aviso cuando esté resuelto."

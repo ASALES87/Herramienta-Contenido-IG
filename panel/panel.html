@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel Contenido IG</title>
+<style>
+:root{
+  --bg:#f5f4f0; --panel:#ffffff; --ink:#1d2320; --muted:#6b736f; --line:#e4e2dc; --soft:#efeee9;
+  --pri:#1f6f4a; --pri-ink:#ffffff; --ok:#1f8a55; --warn:#b7791f; --bad:#c0392b; --info:#2b6cb0;
+  --chip-ok:#e3f4ea; --chip-warn:#fbf0dc; --chip-bad:#fbe4e1; --chip-info:#e3edf9;
+  --sombra:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.05);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#141816; --panel:#1c211f; --ink:#e8ece9; --muted:#9aa49f; --line:#2c3330; --soft:#232926;
+    --pri:#5cc08c; --pri-ink:#0f1f17; --chip-ok:#1d3a2b; --chip-warn:#3d3220; --chip-bad:#40231f; --chip-info:#1f2d40;
+    --sombra:0 1px 2px rgba(0,0,0,.4)}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--pri)}
+button{font:inherit}
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:16px 12px;position:sticky;top:0;height:100vh;overflow:auto}
+aside h1{font-size:15px;margin:2px 8px 14px;letter-spacing:.2px}
+aside h1 small{display:block;color:var(--muted);font-weight:500;font-size:12px}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:none;color:var(--ink);padding:8px 10px;border-radius:10px;cursor:pointer}
+.nav-btn:hover{background:var(--soft)}
+.nav-btn.on{background:var(--soft);font-weight:600}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.sep{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:16px 10px 6px}
+main{padding:22px 28px 140px;max-width:1180px;width:100%}
+.top{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+.top h2{margin:0;font-size:24px}
+.top .sub{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--sombra);margin-bottom:16px}
+.card h3{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
+.card h3 .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--soft);font-size:12px}
+a.btn{text-decoration:none;display:inline-block}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;border-radius:9px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+.btn[disabled]{opacity:.55;cursor:wait}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--soft);color:var(--muted)}
+.chip.ok{background:var(--chip-ok);color:var(--ok)} .chip.warn{background:var(--chip-warn);color:var(--warn)}
+.chip.bad{background:var(--chip-bad);color:var(--bad)} .chip.info{background:var(--chip-info);color:var(--info)}
+.muted{color:var(--muted)}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.ccard{cursor:pointer;padding:0;overflow:hidden}
+.ccard .img{aspect-ratio:3/2;background:var(--soft) center/cover no-repeat}
+.ccard .body{padding:12px 14px}
+.ccard b{display:block;font-size:15px}
+/* flujo */
+.flujo{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px}
+.paso{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;min-height:84px}
+.paso:hover{border-color:var(--muted)}
+.paso .t{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.paso .v{font-weight:600;margin-top:4px}
+.paso .e{margin-top:6px}
+.paso.hecho{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.paso.toca{border-color:var(--warn);box-shadow:0 0 0 2px color-mix(in srgb,var(--warn) 25%,transparent)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.thumbs img{width:100%;border-radius:10px;display:block;cursor:zoom-in;background:var(--soft)}
+.thumbs figure{margin:0}
+.thumbs figcaption{font-size:12px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+.cal-item{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.cal-item img{width:64px;height:80px;object-fit:cover;border-radius:8px;background:var(--soft)}
+.cal-item .ph{width:64px;height:80px;border-radius:8px;background:var(--soft)}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--muted);cursor:pointer}
+.drop.over{border-color:var(--pri);color:var(--pri)}
+.check{white-space:pre-wrap;font-size:13px;line-height:1.6}
+.check .li{display:block}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+/* consola */
+#consola{position:fixed;left:260px;right:0;bottom:0;background:#101412;color:#d6e2db;border-top:1px solid #2a332f;max-height:42vh;display:flex;flex-direction:column;z-index:20;transform:translateY(calc(100% - 38px));transition:transform .2s}
+#consola.abierta{transform:none}
+#consola .bar{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;font-size:13px}
+#consola pre{margin:0;padding:6px 14px 16px;overflow:auto;font:12px/1.5 var(--mono);white-space:pre-wrap}
+#consola .estado{margin-left:auto;color:#9fb3a8}
+/* visor */
+#visor{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+#visor.on{display:flex}
+#visor .in{max-width:min(1100px,96vw);max-height:92vh;overflow:auto;background:var(--panel);border-radius:14px;padding:16px}
+#visor .slides{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
+#visor .slides img,#visor .slides video{height:min(62vh,540px);border-radius:10px}
+#visor .cap{white-space:pre-wrap;margin-top:12px;font-size:13px}
+#visor .x{float:right}
+.toast{position:fixed;top:16px;right:16px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr} aside{position:static;height:auto} #consola{left:0}
+  .flujo{grid-template-columns:repeat(2,1fr)} .two{grid-template-columns:1fr} main{padding:16px 16px 140px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <h1>Contenido IG<small>Panel · ensayo general</small></h1>
+    <button class="nav-btn" data-ir="inicio">🏠 Inicio</button>
+    <button class="nav-btn" data-ir="nuevo">＋ Nuevo cliente</button>
+    <div class="sep">Clientes</div>
+    <div id="lista-clientes"></div>
+    <div class="sep">Herramientas</div>
+    <button class="nav-btn" data-global="estado">Estado del contenido</button>
+    <button class="nav-btn" data-global="tokens">Tokens de Instagram</button>
+    <button class="nav-btn" data-global="simular_todos">Simular publicación (todos)</button>
+    <button class="nav-btn" data-global="prueba">Prueba completa del motor</button>
+  </aside>
+  <main id="main"><p class="muted">Cargando…</p></main>
+</div>
+
+<div id="consola"><div class="bar" id="consola-bar"><b>Consola</b><span class="muted" style="color:#9fb3a8">lo que hace el motor</span><span class="estado" id="consola-estado">—</span></div><pre id="consola-txt">Aquí verás la salida de cada acción.</pre></div>
+<div id="visor"><div class="in" id="visor-in"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=(s,el=document)=>el.querySelector(s), $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const MESES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"], DIAS=["dom","lun","mar","mié","jue","vie","sáb"];
+const fecha=iso=>{ if(!iso) return "—"; const d=new Date(iso.length<=10?iso+"T00:00":iso); return `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`+(iso.length>10?` · ${iso.slice(11,16)}`:""); };
+let CLIENTES=[], ACTUAL=null, DET=null, VER_MAS=false, VER_DATOS=false;
+
+function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("on"); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("on"),2600); }
+function consola(txt,estado){ $("#consola-txt").textContent=txt; $("#consola-estado").textContent=estado||""; $("#consola").classList.add("abierta"); $("#consola-txt").scrollTop=1e9; }
+$("#consola-bar").onclick=()=>$("#consola").classList.toggle("abierta");
+
+async function api(url,body){
+  const r=await fetch(url,body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}:{});
+  const j=await r.json(); if(!r.ok) throw new Error(j.error||r.status); return j;
+}
+async function correr(btn,url,body,etiqueta){
+  const b=btn; if(b) b.disabled=true;
+  const t0=Date.now(); consola(`${etiqueta||"Ejecutando"}…`,"en marcha");
+  const tick=setInterval(()=>$("#consola-estado").textContent=`en marcha · ${Math.round((Date.now()-t0)/1000)} s`,500);
+  try{ const j=await api(url,body); consola(j.salida||JSON.stringify(j,null,1), j.ok?"✓ terminado":"✗ con errores"); toast(j.ok?"Hecho":"Ha fallado algo: mira la consola"); return j; }
+  catch(e){ consola(String(e),"✗ error"); toast("Error: "+e.message); }
+  finally{ clearInterval(tick); if(b) b.disabled=false; }
+}
+
+/* ---------- navegación ---------- */
+function ir(h){ location.hash=h; }
+window.addEventListener("hashchange",ruta);
+$$("[data-ir]").forEach(b=>b.onclick=()=>ir(b.dataset.ir));
+$$("[data-global]").forEach(b=>b.onclick=()=>correr(b,"/api/global",{accion:b.dataset.global},b.textContent));
+
+async function cargarLista(){
+  CLIENTES=await api("/api/clientes");
+  $("#lista-clientes").innerHTML=CLIENTES.map(c=>`<button class="nav-btn" data-c="${esc(c.id)}"><span class="dot" style="background:${esc((c.colores||{}).principal||"#ccc")}"></span><span style="flex:1">${esc(c.nombre)}${CLIENTES.filter(x=>x.nombre===c.nombre).length>1?`<small class="muted" style="display:block;font-size:11px">${esc(c.id)}</small>`:""}</span>${avisoCorto(c)}</button>`).join("")||`<p class="muted" style="padding:0 10px">Aún no hay clientes.</p>`;
+  $$("[data-c]").forEach(b=>b.onclick=()=>ir("c="+b.dataset.c));
+  marcarNav();
+}
+function avisoCorto(c){
+  if(c.cambios_por_hacer&&Object.keys(c.cambios_por_hacer).length) return `<span class="chip bad" title="cambios pedidos">✎</span>`;
+  if(c.tandas_pendientes&&c.tandas_pendientes.length) return `<span class="chip warn" title="tanda en revisión">●</span>`;
+  if(c.necesita_tanda&&c.estado!=="en alta") return `<span class="chip bad" title="necesita tanda">!</span>`;
+  return "";
+}
+function marcarNav(){ const h=location.hash.slice(1)||"inicio"; $$(".nav-btn").forEach(b=>b.classList.toggle("on",b.dataset.ir===h||("c="+b.dataset.c)===h)); }
+
+async function ruta(){
+  const h=decodeURIComponent(location.hash.slice(1));
+  marcarNav();
+  if(h.startsWith("c=")) return verCliente(h.slice(2));
+  if(h==="nuevo") return verNuevo();
+  return verInicio();
+}
+
+/* ---------- inicio ---------- */
+function estadoChip(c){ const m={activo:"ok",ensayo:"info","en alta":""}; return `<span class="chip ${m[c.estado]||""}">${esc(c.estado)}</span>`; }
+function verInicio(){
+  const n=CLIENTES.length, ens=CLIENTES.filter(c=>c.estado==="ensayo").length, act=CLIENTES.filter(c=>c.estado==="activo").length;
+  const pend=CLIENTES.filter(c=>(c.tandas_pendientes||[]).length).length;
+  $("#main").innerHTML=`
+  <div class="top"><div><h2>Inicio</h2><div class="sub">${n} clientes · ${act} activos · ${ens} en ensayo · ${pend} con tanda en revisión</div></div>
+    <div class="row"><button class="btn pri" onclick="ir('nuevo')">＋ Nuevo cliente</button></div></div>
+  <div class="card"><h3>Cómo va el flujo</h3>
+    <div class="muted">Alta con el asistente → muestras y catálogo para enseñárselas → fotos → tanda de contenido → el cliente la revisa en su vista →
+    publicación (aquí siempre simulada) → conexión con Instagram y activar. Cada cliente muestra en qué paso está.</div></div>
+  <div class="grid-cards">${CLIENTES.map(c=>`
+    <div class="card ccard" data-c="${esc(c.id)}"><div class="img" style="${c.imagen?`background-image:url('${esc(c.imagen)}')`:`background:${esc((c.colores||{}).fondo||"#eee")}`}"></div>
+      <div class="body"><b>${esc(c.nombre)}</b>${CLIENTES.filter(x=>x.nombre===c.nombre).length>1?`<small class="muted">${esc(c.id)}</small>`:""}<div class="muted">@${esc(c.instagram||"sin cuenta")} · ${esc(c.sector||"")}</div>
+      <div class="row" style="margin-top:8px">${estadoChip(c)}${contenidoChip(c)}</div></div></div>`).join("")}</div>`;
+  $$(".ccard").forEach(el=>el.onclick=()=>ir("c="+el.dataset.c));
+}
+function contenidoChip(c){
+  if(c.cambios_por_hacer&&Object.keys(c.cambios_por_hacer).length) return `<span class="chip bad">cambios pedidos</span>`;
+  if((c.tandas_pendientes||[]).length) return `<span class="chip warn">en revisión</span>`;
+  if(!c.contenido_hasta) return `<span class="chip">sin contenido</span>`;
+  return `<span class="chip ${c.necesita_tanda?"bad":"ok"}">hasta ${fecha(c.contenido_hasta)}</span>`;
+}
+
+/* ---------- nuevo cliente ---------- */
+function verNuevo(){
+  $("#main").innerHTML=`
+  <div class="top"><div><h2>Nuevo cliente</h2><div class="sub">El asistente hace las preguntas y da solución en cada paso; al final crea el cliente aquí mismo.</div></div></div>
+  <div class="two">
+    <div class="card"><h3><span class="n">A</span> Con el asistente</h3>
+      <p class="muted">Ábrelo en otra pestaña (o en la tablet, en la visita). En el último paso aparece <b>«Crear cliente en el panel»</b>:
+      crea la marca, el plan, el logo, la guía de tandas, el checklist, las muestras y el catálogo en unos segundos.</p>
+      <a class="btn pri" href="/asistente" target="_blank" rel="noopener">Abrir el asistente ↗</a></div>
+    <div class="card"><h3><span class="n">B</span> Con una ficha guardada</h3>
+      <p class="muted">Si el cliente rellenó el asistente por su cuenta y te mandó la ficha (JSON), súbela aquí.</p>
+      <div class="drop" id="drop-ficha">Arrastra la ficha .json o haz clic para elegirla</div>
+      <input type="file" id="in-ficha" accept=".json,application/json" hidden>
+      <label class="row" style="margin-top:10px"><input type="checkbox" id="forzar"> Rehacer si ya existe (borra el cliente y su contenido)</label></div>
+  </div>`;
+  const drop=$("#drop-ficha"), inp=$("#in-ficha");
+  const usar=async f=>{ try{ const ficha=JSON.parse(await f.text()); const j=await correr(null,"/api/alta",{ficha,forzar:$("#forzar").checked},"Alta de "+(ficha.nombre||"cliente"));
+      if(j&&j.ok&&j.cliente){ await cargarLista(); ir("c="+j.cliente); } }catch(e){ toast("Ese archivo no es una ficha válida"); } };
+  drop.onclick=()=>inp.click(); inp.onchange=()=>inp.files[0]&&usar(inp.files[0]);
+  drop.ondragover=e=>{e.preventDefault();drop.classList.add("over")}; drop.ondragleave=()=>drop.classList.remove("over");
+  drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over"); e.dataTransfer.files[0]&&usar(e.dataTransfer.files[0]);};
+}
+
+/* ---------- cliente ---------- */
+async function verCliente(id,silencioso){
+  if(id!==ACTUAL){ VER_MAS=false; }
+  ACTUAL=id;
+  if(!silencioso) $("#main").innerHTML=`<p class="muted">Cargando ${esc(id)}…</p>`;
+  try{ DET=await api("/api/cliente/"+encodeURIComponent(id)); }catch(e){ $("#main").innerHTML=`<div class="card">No encuentro ese cliente: ${esc(e.message)}</div>`; return; }
+  pintarCliente();
+}
+async function refrescar(){ await cargarLista(); if(ACTUAL) await verCliente(ACTUAL,true); }
+async function acc(btn,accion,extra){ const j=await correr(btn,`/api/cliente/${encodeURIComponent(ACTUAL)}/accion`,{accion,...(extra||{})},btn?btn.textContent.trim():accion); await refrescar(); return j; }
+
+function pasos(d){
+  const pend=d.tandas.filter(t=>t.estado==="pendiente"), camb=Object.keys(d.cambios_por_hacer||{}).length;
+  const prox=d.proximas.filter(p=>p.estado==="programada").length;
+  const nf=d.fotos.length, nivel=((d.marca.fotos||{}).nivel_max)||"—";
+  return [
+    {k:"alta",t:"1 · Alta",v:"Hecha",e:`<span class="chip ok">✓</span>`,hecho:true},
+    {k:"presentacion",t:"2 · Presentación",v:d.muestras.length?`${d.muestras.length} muestras`:"Sin muestras",e:d.muestras.length&&d.catalogo?`<span class="chip ok">lista</span>`:`<span class="chip warn">generar</span>`,hecho:d.muestras.length&&d.catalogo},
+    {k:"fotos",t:"3 · Fotos",v:`${nf} fotos`,e:`<span class="chip ${nf?"ok":""}">hasta «${esc(nivel)}»</span>`,hecho:nf>0||nivel==="ninguna"},
+    {k:"contenido",t:"4 · Contenido",v:d.contenido_hasta?`hasta ${fecha(d.contenido_hasta)}`:"Sin tanda",e:d.posts_sin_programar?`<span class="chip warn">${d.posts_sin_programar} sin cerrar</span>`:d.necesita_tanda?`<span class="chip bad">toca tanda</span>`:`<span class="chip ok">${d.dias_quedan} días</span>`,hecho:!!d.contenido_hasta&&!d.necesita_tanda,toca:d.necesita_tanda||d.posts_sin_programar},
+    {k:"revision",t:"5 · Revisión",v:camb?"Cambios pedidos":pend.length?"En revisión":"Nada pendiente",e:camb?`<span class="chip bad">aplicar</span>`:pend.length?`<span class="chip warn">${esc(pend[0].id)}</span>`:`<span class="chip ok">✓</span>`,hecho:!pend.length&&d.tandas.length,toca:camb||pend.length},
+    {k:"publicacion",t:"6 · Publicación",v:`${prox} programadas`,e:`<span class="chip info">${esc(d.marca.media_host||"r2")}</span>`,hecho:prox>0},
+    {k:"activar",t:"7 · Instagram",v:d.token_caduca?`token hasta ${fecha(d.token_caduca)}`:"Sin conectar",e:`<span class="chip ${d.estado==="activo"?"ok":""}">${esc(d.estado)}</span>`,hecho:d.estado==="activo"},
+  ];
+}
+
+function pintarCliente(){
+  const d=DET, c=d.colores||{};
+  const sw=["principal","fondo","acento","texto"].map(k=>c[k]?`<span class="dot" title="${k} ${esc(c[k])}" style="width:16px;height:16px;background:${esc(c[k])}"></span>`:"").join("");
+  const pend=d.tandas.find(t=>t.estado==="pendiente");
+  $("#main").innerHTML=`
+  <div class="top"><div><h2>${esc(d.nombre)}</h2><div class="sub">@${esc(d.instagram||"sin cuenta")} · ${esc(d.sector)} · plan ${esc(d.plan.ritmo||"")} · plantillas ${esc((d.marca.plantillas||[]).join(" + "))}</div>
+    <div class="row" style="margin-top:6px">${estadoChip(d)} ${sw}</div></div>
+    <div class="row"><a class="btn pri" href="${esc(d.vista_cliente)}" target="_blank" rel="noopener">Vista del cliente ↗</a>
+      ${d.estado!=="activo"?`<button class="btn" id="b-ensayo">${d.plan.ensayo?"Quitar de ensayo":"Pasar a ensayo"}</button>`:""}</div></div>
+
+  <div class="flujo">${pasos(d).map(p=>`<div class="paso ${p.hecho?"hecho":""} ${p.toca?"toca":""}" data-ir-sec="${p.k}"><div class="t">${p.t}</div><div class="v">${p.v}</div><div class="e">${p.e}</div></div>`).join("")}</div>
+
+  <div class="card" id="sec-presentacion"><h3><span class="n">2</span> Presentación para el cliente</h3>
+    <div class="row" style="margin-bottom:10px"><button class="btn" data-a="muestras">Rehacer muestras y catálogo</button>
+      <span class="muted">Portadas, historia y mosaico con su marca, y las 5 plantillas para que elija.</span></div>
+    <div class="thumbs">${d.muestras.map(u=>`<figure><img src="${esc(u)}" loading="lazy" data-zoom><figcaption>${esc(u.split("/").pop().replace(".jpg","").replace("_"," "))}</figcaption></figure>`).join("")}
+</div>
+    ${d.catalogo?`<figure style="margin:14px 0 0;max-width:460px"><img src="${esc(d.catalogo)}" loading="lazy" data-zoom style="width:100%;border-radius:10px;cursor:zoom-in"><figcaption class="muted" style="font-size:12px">Catálogo de las 5 plantillas con su marca (clic para ampliar)</figcaption></figure>`:""}</div>
+
+  <div class="card" id="sec-fotos"><h3><span class="n">3</span> Fotos del cliente</h3>
+    <div class="row" style="margin-bottom:10px"><span class="muted">Nivel de fotos: <b>${esc(((d.marca.fotos||{}).nivel)||"auto")}</b>, como mucho «${esc(((d.marca.fotos||{}).nivel_max)||"—")}». Prefiere: ${esc(((d.marca.contenido_propio||{}).preferencia)||"—")}. Cuantas más fotos libres, más publicaciones con foto.</span></div>
+    <div class="drop" id="drop-fotos">Arrastra fotos aquí o haz clic (JPG/PNG). Se guardan en su biblioteca, a 2160 px.</div>
+    <input type="file" id="in-fotos" accept="image/*" multiple hidden>
+    <div class="thumbs" style="margin-top:12px">${d.fotos.map(f=>f.url?`<figure><img src="${esc(f.url)}" loading="lazy" data-zoom><figcaption>${esc(f.id)} · ${esc(f.origen)}${f.notas?" · "+esc(f.notas):""}</figcaption></figure>`:"").join("")}</div></div>
+
+  <div class="card" id="sec-contenido"><h3><span class="n">4</span> Contenido (tandas)</h3>
+    <div class="row" style="margin-bottom:8px">
+      ${d.plan.ensayo&&!d.plan.activo?`<button class="btn pri" data-a="tanda_ejemplo">Generar tanda de ejemplo</button>`:""}
+      ${d.posts_sin_programar?`<button class="btn pri" data-a="cerrar_tanda">Cerrar tanda (${d.posts_sin_programar} posts escritos)</button>`:""}
+      <button class="btn" data-a="imagenes">Rehacer imágenes y perfil</button>
+    </div>
+    <p class="muted" style="margin:6px 0 12px">El contenido de verdad lo escribe la tarea de Claude (días 1 y 15) con la guía del cliente; después se «cierra» la tanda: planificar, imágenes, perfil y cuaderno.
+      ${d.plan.ensayo?"En ensayo, la tanda de ejemplo usa textos de relleno con sus temas para probar el flujo.":""}</p>
+    ${d.tandas.length?`<table><tr><th>Tanda</th><th>Fechas</th><th>Publicaciones</th><th>Estado</th><th></th></tr>${d.tandas.map(t=>`
+      <tr><td><b>${esc(t.id)}</b></td><td>${fecha(t.desde)} → ${fecha(t.hasta)}</td><td>${t.n_posts}</td>
+      <td>${t.estado==="aprobada"?`<span class="chip ok">aprobada ${t.aprobada?fecha(t.aprobada):""}</span>`:`<span class="chip warn">en revisión</span>`}
+        ${t.cambios_pedidos&&!t.cambios_hechos?`<span class="chip bad">${(t.cambios||[]).length} cambios</span>`:""}${t.nota?`<div class="muted" style="font-size:12px">${esc(t.nota)}</div>`:""}</td>
+      <td>${t.pdf?`<a href="${esc(t.pdf)}" target="_blank" rel="noopener">Cuaderno PDF</a>`:""}</td></tr>`).join("")}</table>`:`<p class="muted">Todavía no hay tandas.</p>`}</div>
+
+  <div class="card" id="sec-revision"><h3><span class="n">5</span> Revisión del cliente</h3>
+    ${pend?`<p>La tanda <b>${esc(pend.id)}</b> está en revisión: no se publica nada de ella hasta que se apruebe (sola a los 3 días si no hay comentarios).</p>
+      <div class="row"><a class="btn pri" href="${esc(d.vista_cliente)}" target="_blank" rel="noopener">Abrir la vista del cliente ↗</a>
+      <button class="btn" id="b-copiar-enlace">Copiar enlace</button>${pend.pdf?`<a class="btn" href="${esc(pend.pdf)}" target="_blank" rel="noopener">Cuaderno PDF</a>`:""}
+      <button class="btn" data-a="aprobar">Aprobar en su nombre</button></div>
+      ${(pend.cambios||[]).length?`<h4 style="margin:16px 0 6px">Cambios que ha pedido</h4><table><tr><th>Nº</th><th>Publicación</th><th>Qué cambiar</th><th>Fecha</th></tr>
+        ${pend.cambios.map(x=>`<tr><td>${esc(x.n)}</td><td class="muted">${esc(x.id)}</td><td>${esc(x.texto)}</td><td class="muted">${fecha(x.fecha)}${x.ronda>1?` · ronda ${x.ronda}`:""}</td></tr>`).join("")}</table>
+        ${pend.cambios_pedidos&&!pend.cambios_hechos?`<p class="muted">Aplícalos en <code>content/posts.json</code> (o pídeselo a Claude: «aplica los cambios pedidos de ${esc(d.id)}») y después:</p><button class="btn pri" data-a="rehacer">Cambios aplicados: rehacer y volver a revisión</button>`:`<p class="muted">Cambios aplicados el ${fecha(pend.cambios_hechos)}; vuelve a estar en revisión.</p>`}`:""}`
+      :`<p class="muted">No hay ninguna tanda esperando al cliente. Su vista muestra las próximas publicaciones.</p><a class="btn" href="${esc(d.vista_cliente)}" target="_blank" rel="noopener">Vista del cliente ↗</a>`}</div>
+
+  <div class="card" id="sec-publicacion"><h3><span class="n">6</span> Publicación</h3>
+    <div class="row" style="margin-bottom:10px"><button class="btn pri" data-a="simular">Simular publicación ahora</button>
+      <span class="muted">Muestra qué toca y lo «publica» en modo simulado: no llama a Instagram. Lo que está en revisión no sale.</span></div>
+    <div class="row" style="margin-bottom:6px"><label class="row muted"><input type="checkbox" id="ver-datos" ${VER_DATOS?"checked":""}> Ver también las historias «¿Sabías que…?» de cada mañana</label></div>
+    <div class="two"><div>${d.proximas.length?d.proximas.map((p,i)=>({p,i})).filter(x=>VER_DATOS||!x.p.id.startsWith("f-")).slice(0,VER_MAS?60:12).map(({p,i})=>`
+      <div class="cal-item" data-i="${i}">${p.archivos[0]?`<img src="${esc(p.archivos[0].poster||p.archivos[0].url)}" loading="lazy">`:`<div class="ph"></div>`}
+        <div><b>${esc(p.tipo_txt)}</b> · ${fecha(p.fecha)}<div class="muted">${esc(p.titulo||p.caption.slice(0,80))}</div></div>
+        <span class="chip ${({publicada:"ok","en revisión":"warn",atrasada:"bad",programada:"info"})[p.estado]}">${esc(p.estado)}</span></div>`).join("")+(VER_MAS?"":`<button class="btn" id="b-ver-mas" style="margin-top:10px">Ver más</button>`):`<p class="muted">Nada programado.</p>`}</div>
+      <div>${d.perfil?`<img src="${esc(d.perfil)}" style="width:100%;border-radius:12px" data-zoom><div class="muted" style="font-size:12px;margin-top:4px">Así quedará el perfil (últimas 15)</div>`:`<p class="muted">Sin vista del perfil todavía.</p>`}</div></div></div>
+
+  <div class="card" id="sec-activar"><h3><span class="n">7</span> Conexión con Instagram y activación</h3>
+    <p class="muted">Se hace a mano y nunca con contraseña: inicio de sesión oficial de Meta en una videollamada, token a los Secrets de GitHub y <code>"activo": true</code> en su plan. El panel no publica en cuentas reales.</p>
+    <div class="check">${pintarChecklist(d.checklist)}</div></div>`;
+
+  $$("[data-ir-sec]").forEach(el=>el.onclick=()=>$("#sec-"+el.dataset.irSec)?.scrollIntoView({behavior:"smooth",block:"start"}));
+  $$("[data-a]").forEach(b=>b.onclick=()=>acc(b,b.dataset.a));
+  $$("[data-zoom]").forEach(im=>im.onclick=()=>visor(`<img src="${esc(im.src)}" style="max-width:100%;max-height:84vh;border-radius:10px">`));
+  $$(".cal-item").forEach(el=>el.onclick=()=>verPost(d.proximas[+el.dataset.i]));
+  const vm=$("#b-ver-mas"); if(vm) vm.onclick=()=>{ VER_MAS=true; pintarCliente(); $("#sec-publicacion").scrollIntoView(); };
+  $("#ver-datos").onchange=e=>{ VER_DATOS=e.target.checked; pintarCliente(); $("#sec-publicacion").scrollIntoView(); };
+  const be=$("#b-ensayo"); if(be) be.onclick=()=>acc(be,"ensayo",{valor:!d.plan.ensayo});
+  const bc=$("#b-copiar-enlace"); if(bc) bc.onclick=()=>{ navigator.clipboard.writeText(location.origin+d.vista_cliente); toast("Enlace copiado (solo funciona en este ordenador por ahora)"); };
+  const drop=$("#drop-fotos"), inp=$("#in-fotos");
+  drop.onclick=()=>inp.click(); inp.onchange=()=>subir([...inp.files]);
+  drop.ondragover=e=>{e.preventDefault();drop.classList.add("over")}; drop.ondragleave=()=>drop.classList.remove("over");
+  drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over"); subir([...e.dataTransfer.files].filter(f=>f.type.startsWith("image/")));};
+}
+function pintarChecklist(md){
+  if(!md) return `<span class="muted">Sin checklist.</span>`;
+  return esc(md).split("\n").map(l=>{
+    if(l.startsWith("# ")) return `<b>${l.slice(2)}</b>`;
+    if(l.startsWith("## ")) return `<b style="display:block;margin-top:8px">${l.slice(3)}</b>`;
+    return l.replace(/^- \[ \]/,"☐").replace(/^- \[x\]/i,"☑").replace(/`([^`]+)`/g,"<code>$1</code>");
+  }).join("\n");
+}
+async function subir(files){
+  if(!files.length) return;
+  let log=[];
+  for(const [i,f] of files.entries()){
+    consola(log.concat(`Subiendo ${i+1}/${files.length}: ${f.name}…`).join("\n"),"en marcha");
+    const datos=await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(f); });
+    try{ const j=await api(`/api/cliente/${encodeURIComponent(ACTUAL)}/foto`,{nombre:f.name,datos}); log.push(j.salida); }
+    catch(e){ log.push("✗ "+f.name+": "+e.message); }
+  }
+  consola(log.join("\n"),"✓ terminado"); toast(`${files.length} foto(s) añadidas`); refrescar();
+}
+function visor(html){ $("#visor-in").innerHTML=`<button class="btn x" onclick="cerrarVisor()">Cerrar</button>`+html; $("#visor").classList.add("on"); }
+function cerrarVisor(){ $("#visor").classList.remove("on"); $("#visor-in").innerHTML=""; }
+$("#visor").onclick=e=>{ if(e.target.id==="visor") cerrarVisor(); };
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") cerrarVisor(); });
+function verPost(p){
+  const media=p.archivos.map(a=>a.tipo==="video"?`<video src="${esc(a.url)}" controls poster="${esc(a.poster||"")}"></video>`:`<img src="${esc(a.url)}">`).join("");
+  visor(`<b>${esc(p.tipo_txt)} · ${fecha(p.fecha)}</b> <span class="chip">${esc(p.estado)}</span>${p.ejemplo?` <span class="chip warn">ejemplo</span>`:""}
+    <div class="slides" style="margin-top:10px">${media||'<span class="muted">Sin imágenes todavía.</span>'}</div>
+    ${p.guion?`<div class="cap"><b>Guion del reel</b>\n${p.guion.map(esc).join("\n")}</div>`:""}
+    <div class="cap">${esc(p.caption||"")}</div>`);
+}
+
+cargarLista().then(ruta).catch(e=>$("#main").innerHTML=`<div class="card">El panel no responde: ${esc(e.message)}</div>`);
+</script>
+</body>
+</html>

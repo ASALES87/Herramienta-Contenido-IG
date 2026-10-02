@@ -11,7 +11,17 @@ Generada por `alta.py` desde `ficha_espiga.json`.
 - [ ] Firmar el contrato de servicio y el de encargado del tratamiento (RGPD)
 - [ ] Repasar el borrador de `content/GUIA_TANDAS.md`
 - [ ] Generar la primera tanda de 35 días y enviarla a revisión
-- [ ] Activar: `"activo": true` en `clientes/panaderia-la-espiga/content/plan.json`
+
+## Publicación en producción (lecciones de Kodomo)
+- [ ] Lanzador externo (cron-job.org, uno solo para todos los clientes): comprobar que se dispara a las horas de este cliente (Europe/Madrid): **08:00, 10:00, 12:00, 13:30**. Si falta alguna, añadirla al mismo lanzador desde el navegador normal (cron-job.org bloquea el navegador de Claude)
+- [ ] Subir a GitHub `publicar.yml` con los horarios y secretos que ha escrito `alta.py` (el cron de GitHub queda de respaldo)
+- [ ] Retraso máximo acordado: `retraso_max_horas` en `content/plan.json` (ahora 3 h). Lo que llegue más tarde no se publica fuera de hora: pasa al siguiente hueco libre y llega un aviso
+- [ ] Simular: Actions → «Publicar en Instagram» → modo `simular`, cliente `panaderia-la-espiga` → en verde y sin avisos raros
+- [ ] Comprobación rápida: `python motor/todos.py pendiente --cliente panaderia-la-espiga` responde «si»/«no» en segundos
+- [ ] Primera publicación real SOLO con confirmación explícita: modo `publicar_siguiente`, cliente `panaderia-la-espiga`. Comprobar que sale una sola vez en Instagram y que queda en `published.json` (commit «Publicado · panaderia-la-espiga»)
+- [ ] Activar: `"activo": true` en `clientes/panaderia-la-espiga/content/plan.json` y subirlo a GitHub
+- [ ] Avisos: confirmar que llegan por email los issues de GitHub (repo en «Watch») y los fallos de cron-job.org
+- [ ] Al día siguiente de activar: el latido del resumen diario no avisa de nada pendiente y no hay issues abiertos
 
 ## Diagnóstico del asistente
 - [ACCION] Cuenta de Instagram: Tu cuenta es personal. → La pasamos a profesional en el alta. No pierdes seguidores ni publicaciones.

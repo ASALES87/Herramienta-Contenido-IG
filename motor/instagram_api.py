@@ -3,6 +3,11 @@
 Flujo: crear contenedor -> esperar a que esté FINISHED -> publicar.
 Las imágenes/vídeos deben estar en una URL pública (ver media_host.py).
 Límite de Meta: 100 publicaciones por API cada 24 h (un carrusel cuenta como 1).
+
+Lección de Kodomo (oct-2026): media_publish a veces responde «media not ready» (código 9007, subcódigo 2207027)
+aunque el contenedor diga FINISHED. Se reintenta hasta 8 veces con espera creciente (10 s, 20 s, 30 s…) y, antes de
+cada reintento, se mira el status_code del contenedor: si ya es PUBLISHED, no se reintenta (evita duplicados).
+Cualquier otro error se lanza tal cual.
 """
 import time
 from datetime import date, timedelta
@@ -16,6 +21,23 @@ def _url(path: str) -> str:
     return f"{config.IG_GRAPH_BASE}/{path.lstrip('/')}"
 
 
+class IGError(RuntimeError):
+    """Error de la API de Instagram con su código y subcódigo (para decidir si se reintenta)."""
+
+    def __init__(self, status: int, error):
+        self.status = status
+        self.error = error if isinstance(error, dict) else {"message": str(error)}
+        self.code = self.error.get("code")
+        self.subcode = self.error.get("error_subcode")
+        super().__init__(f"Instagram API ({status}): {error}")
+
+
+NO_LISTO = (9007, 2207027)   # «media not ready»
+REINTENTOS_PUBLICAR = 8
+ESPERA_BASE_S = 10
+_sleep = time.sleep          # se sustituye en las pruebas
+
+
 def _call(method: str, path: str, **params) -> dict:
     if not config.IG_ACCESS_TOKEN:
         raise RuntimeError("Falta IG_ACCESS_TOKEN en el .env")
@@ -24,7 +46,7 @@ def _call(method: str, path: str, **params) -> dict:
                          data=params if method != "GET" else None, timeout=60)
     data = r.json()
     if r.status_code >= 400 or "error" in data:
-        raise RuntimeError(f"Instagram API ({r.status_code}): {data.get('error', data)}")
+        raise IGError(r.status_code, data.get("error", data))
     return data
 
 
@@ -66,15 +88,52 @@ def _wait_ready(container_id: str, timeout_s: int = 600) -> None:
     raise TimeoutError(f"El contenedor {container_id} no terminó de procesarse")
 
 
-def _publish(container_id: str) -> str:
+def _no_listo(e: Exception) -> bool:
+    return isinstance(e, IGError) and e.code == NO_LISTO[0] and e.subcode == NO_LISTO[1]
+
+
+def _estado(container_id: str) -> str:
+    return (_call("GET", container_id, fields="status_code") or {}).get("status_code", "")
+
+
+def _buscar_publicada(caption: str) -> str | None:
+    """Si el contenedor ya está PUBLISHED, busca el id de la publicación entre las últimas de la cuenta."""
+    try:
+        recientes = _call("GET", f"{config.IG_USER_ID}/media", fields="id,caption,timestamp", limit=5).get("data", [])
+    except Exception:
+        return None
+    for m in recientes:
+        if (m.get("caption") or "") == (caption or ""):
+            return m["id"]
+    return None
+
+
+def _publish(container_id: str, caption: str = "") -> str:
     _wait_ready(container_id)
-    res = _call("POST", f"{config.IG_USER_ID}/media_publish", creation_id=container_id)
-    return res["id"]
+    intento = 0
+    while True:
+        try:
+            res = _call("POST", f"{config.IG_USER_ID}/media_publish", creation_id=container_id)
+            return res["id"]
+        except IGError as e:
+            if not _no_listo(e) or intento >= REINTENTOS_PUBLICAR:
+                raise
+            intento += 1
+            espera = ESPERA_BASE_S * intento
+            print(f"  … Instagram dice «media not ready»; reintento {intento}/{REINTENTOS_PUBLICAR} en {espera} s")
+            _sleep(espera)
+            estado = _estado(container_id)
+            if estado == "PUBLISHED":   # ya salió: no reintentar (sería un duplicado)
+                mid = _buscar_publicada(caption) or f"container:{container_id}"
+                print(f"  ✓ El contenedor ya estaba publicado ({mid}); no se reintenta")
+                return mid
+            if estado in ("ERROR", "EXPIRED"):
+                raise RuntimeError(f"Contenedor {container_id} en estado {estado} tras «media not ready»") from e
 
 
 def publish_photo(image_url: str, caption: str = "") -> str:
     c = _call("POST", f"{config.IG_USER_ID}/media", image_url=image_url, caption=caption)
-    return _publish(c["id"])
+    return _publish(c["id"], caption)
 
 
 def publish_story(media_url: str) -> str:
@@ -89,7 +148,7 @@ def publish_reel(video_url: str, caption: str = "", share_to_feed: bool = True, 
     if cover_url:
         params["cover_url"] = cover_url
     c = _call("POST", f"{config.IG_USER_ID}/media", **params)
-    return _publish(c["id"])
+    return _publish(c["id"], caption)
 
 
 def publish_carousel(media_urls: list[str], caption: str = "") -> str:
@@ -106,8 +165,10 @@ def publish_carousel(media_urls: list[str], caption: str = "") -> str:
         children.append(c["id"])
     parent = _call("POST", f"{config.IG_USER_ID}/media", media_type="CAROUSEL",
                    children=",".join(children), caption=caption)
-    return _publish(parent["id"])
+    return _publish(parent["id"], caption)
 
 
 def permalink(media_id: str) -> str:
+    if str(media_id).startswith("container:"):
+        return ""
     return _call("GET", media_id, fields="permalink").get("permalink", "")

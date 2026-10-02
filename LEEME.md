@@ -5,7 +5,22 @@ que sigue funcionando aparte y no se toca.
 
 > **Estado: ensayo general.** Solo hay clientes ficticios: `demo`, `panaderia-la-espiga` (en ensayo), `clinica-fisio-mar`
 > y `taller-hermanos-ruiz`. Kodomo no está en este repo: se publica desde el suyo (Kodomo-Publisher).
-> Prueba completa del motor con otro cliente ficticio: `python pruebas/prueba_motor.py`.
+> Prueba completa del motor con otro cliente ficticio: `python pruebas/prueba_motor.py` (25 pasos).
+
+## Panel (todo el flujo en una página)
+Doble clic en **`Abrir panel.cmd`** (o `python panel/servidor.py`) → se abre http://127.0.0.1:8765 en el navegador.
+- **Inicio**: todos los clientes y en qué paso está cada uno.
+- **Nuevo cliente**: abre el asistente; en el último paso, «Crear cliente en el panel» hace el alta (o sube una ficha .json).
+- **Ficha de cada cliente**, en 7 pasos: alta · presentación (muestras y catálogo) · fotos (arrastrar y soltar) ·
+  contenido (tandas; en ensayo, «tanda de ejemplo» con textos de relleno) · revisión del cliente · publicación
+  simulada y calendario · conexión con Instagram (checklist, manual).
+- **Vista del cliente** (`/c/<id>`): sus publicaciones numeradas como en el cuaderno PDF; «Aprobar todo» o «Pedir un
+  cambio» en cualquiera. Los cambios quedan en `content/tandas.json`, la tanda no se aprueba sola hasta aplicarlos
+  (la tarea de tandas los aplica y ejecuta `tandas.py rehacer`).
+- La consola de abajo enseña lo que hace el motor en cada botón.
+Solo funciona en este ordenador (127.0.0.1), no publica en Instagram, no activa clientes y no muestra tokens.
+Para crecer: todo pasa por la API JSON del servidor (`/api/...`); las mismas páginas podrán servirse desde la nube
+con un enlace privado por cliente.
 
 ## Estructura
 ```
@@ -37,6 +52,8 @@ captura/            (Fase D) página «Enviar foto»
 .github/workflows/  publicar.yml (todos los clientes), diario.yml (comentarios y métricas), tokens.yml, contenido.yml
 motor/todos.py      lo que usan los workflows: publicar/simular todos, diario, horas de publicación → cron
 tareas/tandas.md    texto de la tarea programada de Claude que escribe las tandas
+panel/              panel local: servidor.py (API + páginas), panel.html, cliente.html, asistente.html
+motor/tanda_ejemplo.py  tanda de relleno para clientes de ensayo (probar el flujo sin escribir contenido)
 sincronizar.ps1     sube a GitHub lo que escribe la tarea (como en Kodomo)
 motor/tandas.py     estado de contenido de todos los clientes, cerrar y aprobar tandas
 motor/tokens.py     renovación de tokens de Instagram y aviso del GH_PAT
@@ -57,6 +74,9 @@ python motor/biblioteca.py --cliente demo lista
 python motor/publish.py    --cliente demo upcoming 9
 python motor/publish.py    --cliente demo run --dry-run
 python motor/publish.py    --cliente demo next        # con media_host "simulado" no llama a Instagram
+python motor/todos.py pendiente                       # ¿algún cliente activo tiene algo que publicar ya? (si/no)
+python motor/todos.py latido                          # lo que debía salir hace >30 min y no está publicado
+python motor/todos.py horarios                        # horas que debe tener el lanzador de cron-job.org
 ```
 
 ## Alta de un cliente (Fase B)
@@ -120,10 +140,53 @@ acceso en manos de una agencia, muchas fotos) y `taller-hermanos-ruiz` (sin Inst
 - Secretos por cliente con sufijo: `IG_ACCESS_TOKEN_<CLIENTE>`, `IG_USER_ID_<CLIENTE>` (p. ej. `_PANADERIA_LA_ESPIGA`).
   Comunes: `IG_APP_SECRET`, `GH_PAT`, `PEXELS_API_KEY`, `PIXABAY_API_KEY`, `R2_*`. Variable: `GH_PAT_CADUCA`.
   Los workflows pasan a cada cliente solo sus secretos (y los comunes), nunca los de otro.
-- `publicar.yml` se lanza a las horas de los clientes (las calcula `todos.py horarios`; `alta.py` lo actualiza solo)
-  y publica como mucho 1 cosa por cliente y pasada. Manual: «simular» (no publica nada, incluye clientes de ensayo)
-  o «publicar_siguiente» de un cliente.
+- `publicar.yml` lo lanza **cron-job.org** a las horas de los clientes (modo `programado`); el cron de GitHub
+  (horas de `todos.py horarios`; `alta.py` lo actualiza solo) queda de respaldo. Publica como mucho 1 cosa por
+  cliente y pasada. Manual: «simular» (no publica nada, incluye clientes de ensayo) o «publicar_siguiente» de un
+  cliente. Ver «Publicación en producción».
 - Límites a vigilar: 100 secretos por repo (~45 clientes) y 2.000 min/mes de Actions en repos privados.
+
+## Publicación en producción (lecciones de Kodomo, oct-2026)
+Lo aprendido con Kodomo en producción, ya incluido en el motor (Fase A) y en el CHECKLIST de alta de cada cliente.
+
+**1. Horarios: lanzador externo, no el cron de GitHub** (puede llegar con horas de retraso o no lanzarse).
+Puesta en marcha (una sola vez, para todos los clientes):
+1. Token para el lanzador en GitHub → Settings → Developer settings → *Fine-grained tokens*: solo el repo
+   `Herramienta-Contenido-IG`, solo el permiso **Actions: Read and write**, con caducidad (apuntarla).
+   **Copiarlo antes de salir de la página** (después no se vuelve a ver).
+2. En **cron-job.org** (desde el navegador normal: bloquea el registro y la «ejecución de prueba» desde el
+   navegador de Claude), un único trabajo:
+   - URL: `https://api.github.com/repos/ASALES87/Herramienta-Contenido-IG/actions/workflows/publicar.yml/dispatches`
+   - Método `POST`; cabeceras `Authorization: Bearer <token>`, `Accept: application/vnd.github+json`,
+     `X-GitHub-Api-Version: 2022-11-28`; cuerpo `{"ref":"main","inputs":{"modo":"programado"}}`.
+   - Zona horaria **Europe/Madrid**; horas = las que imprime `python motor/todos.py horarios` (todas las de todos
+     los clientes). Cuando un alta añade una hora nueva, se añade a este mismo trabajo.
+   - Activar el email de cron-job.org cuando falle la llamada. Respuesta correcta de GitHub: `204`.
+3. Probar con «ejecución de prueba» en cron-job.org → en Actions aparece «Publicar en Instagram» (`programado`);
+   si no hay nada pendiente termina en segundos.
+4. Antes de que caduque el token: crear otro y cambiarlo en cron-job.org.
+
+**2. Nunca duplicar.** `actions/checkout` con `ref: main` (siempre el `published.json` más reciente); grupo de
+concurrencia `publicar-instagram` con `cancel-in-progress: false`; cada publicación se registra en
+`published.json` y se hace commit + push justo después de cada cliente (`todos.py publicar --commit`).
+
+**3. «Media not ready»** (código 9007 / subcódigo 2207027): `instagram_api.py` reintenta `media_publish` hasta 8 veces
+(10 s, 20 s, 30 s…). Antes de cada reintento mira el `status_code` del contenedor: si ya es `PUBLISHED`, no
+reintenta. Cualquier otro error se lanza tal cual.
+
+**4. Retrasos.** Si algo llega más de `plan.json → retraso_max_horas` tarde (3 h por defecto; 0 = sin límite), no se
+publica fuera de hora: pasa al siguiente hueco libre (una hora del plan del cliente sin otra publicación), queda en
+`content/reprogramados.json` y llega un aviso «🕒 Publicaciones reprogramadas».
+
+**5. Avisos** (issues de GitHub → email): si falla una ejecución programada o del lanzador externo; publicaciones
+reprogramadas; y el **latido** diario (`diario.yml` → `todos.py latido`): si algo debía salir hace más de 30 min y no
+está en `published.json`. Además, cron-job.org manda email si falla la llamada.
+
+**6. Coste de minutos.** El primer paso de `publicar.yml` (`todos.py pendiente`, solo librería estándar) comprueba si
+hay algo pendiente y, si no, la ejecución termina en segundos sin instalar Python, dependencias ni ffmpeg.
+
+**7. Pruebas.** Cada cambio se prueba en modo `simular` (no publica; `prueba.yml` lo hace solo en cada push y
+`pruebas/prueba_motor.py` cubre también los puntos 3, 4, 5 y 6). Publicar de verdad solo con confirmación explícita.
 
 ## Piloto automático (como Kodomo)
 | Qué | Quién | Cuándo |
@@ -135,6 +198,8 @@ acceso en manos de una agencia, muchas fotos) y `taller-hermanos-ruiz` (sin Inst
 | Avisar si a alguien se le acaba el contenido o hay tanda pendiente | `contenido.yml` → aviso de GitHub (email) | cada mañana |
 | Renovar el token de Instagram de cada cliente (≤ 20 días) | `tokens.yml` → `tokens.py renovar-todos` + `gh secret set` | lunes y jueves |
 | Avisar de la caducidad del GH_PAT (no se puede renovar solo) | `tokens.yml` → `tokens.py aviso-pat` (variable `GH_PAT_CADUCA`) | 30/14/7/3/1 días antes |
+| Lanzar la publicación a su hora exacta | cron-job.org → `publicar.yml` (`programado`); cron de GitHub de respaldo | horas de los clientes |
+| Avisar si algo no ha salido (latido) | `diario.yml` → `todos.py latido` | cada noche |
 
 Cuentan los clientes activos y los de ensayo (`plan.json → "ensayo": true`). Comandos útiles:
 `python motor/tandas.py estado` · `python motor/tandas.py estado --hoy 2026-10-20` (simular fecha) ·

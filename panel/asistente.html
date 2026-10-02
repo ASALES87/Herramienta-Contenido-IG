@@ -1,0 +1,928 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Asistente de Alta IG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: columna única de formulario guiado; barra de progreso por pasos; panel interno plegable al final */
+:root{
+  --bg:#F3F4F7; --surface:#FFFFFF; --fg:#1A1E2B; --muted:#5E6577; --line:#DADDE5;
+  --accent:#C2185B; --accent-soft:#FBE4EE; --sol:#0E6B63; --sol-soft:#DFF3F0;
+  --warn:#9A5B00; --warn-soft:#FDF0D8; --bad:#B42318; --bad-soft:#FDE6E4;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono:ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12141B; --surface:#1B1E28; --fg:#ECEEF3; --muted:#A3A9B8; --line:#2E3342;
+  --accent:#F06292; --accent-soft:#3A1E2B; --sol:#5FD3C4; --sol-soft:#163330;
+  --warn:#F2B552; --warn-soft:#3A2C12; --bad:#FF8A80; --bad-soft:#3B1C1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12141B; --surface:#1B1E28; --fg:#ECEEF3; --muted:#A3A9B8; --line:#2E3342;
+  --accent:#F06292; --accent-soft:#3A1E2B; --sol:#5FD3C4; --sol-soft:#163330;
+  --warn:#F2B552; --warn-soft:#3A2C12; --bad:#FF8A80; --bad-soft:#3B1C1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);margin:0}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:24px 64px}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.brand{font:800 22px/1.1 var(--display);letter-spacing:-.01em}
+.brand small{display:block;font:500 13px var(--body);color:var(--muted);letter-spacing:0}
+.mode{font:600 12px var(--body);text-transform:uppercase;letter-spacing:.08em;border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:6px 10px;border-radius:99px;cursor:pointer}
+.mode[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.progress{display:flex;gap:4px;margin-bottom:8px}
+.progress span{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.progress span.done{background:var(--accent)}
+.steplabel{font:600 12px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:18px}
+h1{font:800 clamp(26px,5vw,36px)/1.1 var(--display);letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
+h2{font:700 20px/1.25 var(--display);margin:0 0 6px;text-wrap:balance}
+.lead{color:var(--muted);margin:0 0 24px;max-width:62ch}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:12px}
+.q label.t{display:block;font-weight:600;margin-bottom:4px}
+.q .h{color:var(--muted);font-size:14px;margin:0 0 10px}
+.q .req{color:var(--accent)}
+input[type=text],input[type=email],input[type=tel],textarea{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical}
+input:focus-visible,textarea:focus-visible,button:focus-visible,.opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{font:500 15px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;text-align:left}
+.opt small{display:block;color:var(--muted);font-size:13px;font-weight:400}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.opts.cards .opt{flex:1 1 180px}
+.sol{margin-top:12px;background:var(--sol-soft);border-radius:8px;padding:10px 12px;font-size:14.5px}
+.sol b{color:var(--sol);font-weight:700;text-transform:uppercase;font-size:11.5px;letter-spacing:.08em;display:block;margin-bottom:2px}
+.sol.warn{background:var(--warn-soft)} .sol.warn b{color:var(--warn)}
+.err{color:var(--bad);font-size:14px;margin-top:6px}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{font:600 15px var(--body);border-radius:8px;padding:11px 18px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+.check{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.check input{margin-top:4px;width:18px;height:18px;accent-color:var(--accent);flex:none}
+.colors{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.crow{display:flex;align-items:center;gap:10px;min-width:0}
+.cpick{position:relative;width:46px;height:46px;flex:none;border-radius:8px;border:1px solid var(--line);cursor:pointer;overflow:hidden}
+.cpick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.cpick:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.cfield{display:grid;gap:2px;min-width:0;flex:1}
+.clab{font-size:13px;color:var(--muted);font-weight:600}
+.cfield input{font:14px var(--mono)!important;padding:7px 9px!important;text-transform:uppercase}
+.cfield input.bad{border-color:var(--bad)}
+.swb{cursor:pointer;padding:0}
+.swb:hover{transform:scale(1.08)}
+.swatches{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.sw{width:34px;height:34px;border-radius:6px;border:1px solid var(--line)}
+.mosaic{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;width:min(270px,100%);margin-top:10px}
+.mosaic div{aspect-ratio:4/5;border-radius:2px;display:flex;align-items:center;justify-content:center;font:800 20px var(--display)}
+.mosaic .foto{background:linear-gradient(160deg,#d8b48c 0%,#a7835f 45%,#6d5440 100%);position:relative;align-items:flex-end}
+.mosaic .foto span{display:block;width:100%;height:38%;font:800 16px var(--display);display:flex;align-items:center;justify-content:center}
+.logo-prev{max-height:72px;margin-top:10px;border-radius:6px;border:1px solid var(--line);background:#fff;padding:4px}
+.connect{border:1px dashed var(--line);border-radius:10px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.connect .fake{font:600 14px var(--body);border-radius:8px;padding:9px 14px;background:var(--fg);color:var(--bg);opacity:.55}
+/* diagnóstico */
+.diag{display:grid;gap:10px}
+.item{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--sol);border-radius:10px;padding:14px 16px;display:grid;gap:4px}
+.item.accion{border-left-color:var(--warn)} .item.bloqueo{border-left-color:var(--bad)}
+.item .area{font:600 12px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.pill{font:600 11px var(--body);padding:2px 8px;border-radius:99px;background:var(--sol-soft);color:var(--sol);letter-spacing:.04em}
+.item.accion .pill{background:var(--warn-soft);color:var(--warn)} .item.bloqueo .pill{background:var(--bad-soft);color:var(--bad)}
+.item .s{color:var(--muted);font-size:14.5px}
+.plan{background:var(--fg);color:var(--bg);border-radius:12px;padding:18px 20px;margin:18px 0}
+.plan h2{color:var(--bg)}
+.plan .row{display:flex;gap:24px;flex-wrap:wrap;margin-top:10px}
+.plan .n{font:800 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.plan .l{font-size:13px;opacity:.75}
+ol.next{padding-left:22px;margin:8px 0 0} ol.next li{margin-bottom:6px}
+.status{display:inline-block;font:700 13px var(--body);padding:4px 10px;border-radius:99px;margin-bottom:12px}
+.status.ok{background:var(--sol-soft);color:var(--sol)} .status.no{background:var(--bad-soft);color:var(--bad)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px}
+pre.json{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;font:12.5px/1.5 var(--mono);overflow:auto;max-height:320px;white-space:pre}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.intern{border-top:2px solid var(--fg);margin-top:32px;padding-top:18px}
+.intern h2{display:flex;align-items:center;gap:8px}
+.tag{font:700 11px var(--body);background:var(--fg);color:var(--bg);padding:2px 8px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase}
+.cl label{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+.cl input{margin-top:4px;accent-color:var(--accent);flex:none}
+code{font:13px var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;word-break:break-all}
+.ans{padding:14px 16px}
+.anshead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.anshead h3{font:700 16px var(--display);margin:0}
+.ans dl{display:grid;grid-template-columns:minmax(0,38%) minmax(0,1fr);gap:6px 14px;margin:0;font-size:14.5px}
+.ans dt{color:var(--muted)} .ans dd{margin:0;overflow-wrap:anywhere}
+.ans dd.empty{color:var(--bad)} .ans dd.none{color:var(--muted);font-style:italic}
+@media (max-width:520px){.ans dl{grid-template-columns:1fr;gap:0}.ans dd{margin-bottom:8px}}
+.opts.estilos{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.opts.cards.estilos .opt{padding:8px;min-width:0}
+.mk{position:relative;aspect-ratio:4/5;border-radius:6px;overflow:hidden;margin-bottom:8px}
+.mkph{position:absolute;left:0;right:0;top:0}
+.mkgr{position:absolute;inset:0}
+.mkchip{position:absolute;left:9%;top:9%;width:34%;height:6%;border-radius:9px}
+.mkline{position:absolute;left:9%;top:12%;width:22%;height:2%}
+.mkdots{position:absolute;right:8%;top:8%;display:flex;gap:3px}.mkdots u{width:9px;height:9px;border-radius:50%;display:block}
+.mkt{position:absolute;left:9%;right:9%;top:36%;display:grid;gap:5px}.mkt i{display:block;height:9px;border-radius:3px}.mkt.big i{height:14px}
+.mkname{display:block;font-weight:600}
+.btn.sm{padding:5px 10px;font-size:13px}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}
+.sendbox{border:2px solid var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px}
+.example{font-size:13px;color:var(--muted);margin-top:6px}
+@media (prefers-reduced-motion: no-preference){.q,.item{animation:in .25s ease-out}@keyframes in{from{transform:translateY(4px)}to{transform:none}}}
+</style>
+</head><body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Alta de Instagram <small>Contenido en piloto automático para tu negocio</small></div>
+    <button class="mode" id="modeBtn" aria-pressed="false" type="button">Modo interno</button>
+  </header>
+  <div class="progress" id="progress"></div>
+  <div class="steplabel" id="steplabel"></div>
+  <main id="app"></main>
+  <section id="internal" class="intern" hidden></section>
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<script>
+/* ===== Configuración (cámbiala antes de enviar el enlace a clientes) ===== */
+const CONFIG = {
+  servicio: "Contenido IG",                 // nombre comercial provisional
+  emailContacto: "tu-email@tudominio.com",  // dónde te mandan la ficha
+  version: "0.1"
+};
+
+/* ===== Datos de apoyo ===== */
+const SECTORES = [
+  {v:"comercio",l:"Comercio / tienda física"},
+  {v:"restauracion",l:"Restauración / cafetería"},
+  {v:"salud",l:"Clínica / salud",tip:"Las publicaciones sobre salud las validarás tú antes de salir: nada de afirmaciones médicas sin tu visto bueno.",warn:true},
+  {v:"estetica",l:"Estética / peluquería"},
+  {v:"academia",l:"Academia / formación"},
+  {v:"taller",l:"Taller / servicios técnicos"},
+  {v:"online",l:"Tienda online"},
+  {v:"otro",l:"Otro"}
+];
+const PALETAS = { // principal, fondo, acento, texto
+  comercio:["#1F4E79","#F4F7FB","#E3A72F","#1D2330"],
+  restauracion:["#7A3B1F","#FBF4EC","#D9822B","#2A1E17"],
+  salud:["#0F6C7A","#F2F8F9","#7BC4B8","#18323A"],
+  estetica:["#8C3B5E","#FBF2F5","#D8A48F","#2C1C24"],
+  academia:["#2C3E8C","#F4F5FB","#F2B134","#1C2240"],
+  taller:["#263238","#F2F3F4","#E85D04","#16191C"],
+  online:["#4A2C82","#F6F3FB","#2EC4B6","#1E1830"],
+  otro:["#2F4858","#F5F7F7","#F26419","#1B2A33"]
+};
+const PILARES = {
+  _base:["Lo que hacemos","Consejos útiles","Mitos y errores frecuentes","Equipo y día a día","Clientes y opiniones","Novedades y fechas clave"],
+  restauracion:["La carta y el plato estrella","Detrás de la cocina","Mitos y curiosidades","Producto y proveedores","Clientes y momentos","Eventos y fechas"],
+  salud:["Tratamientos y servicios","Consejos de prevención","Mitos y errores frecuentes","El equipo","Preguntas frecuentes","Novedades del centro"],
+  estetica:["Antes y después","Tendencias","Consejos de cuidado","Equipo y día a día","Clientas y clientes","Ofertas y fechas"],
+  academia:["Cursos y grupos","Consejos de estudio","Errores frecuentes","Profesores y día a día","Logros del alumnado","Plazos y matrículas"],
+  online:["Producto estrella","Cómo se usa","Consejos y mitos","Detrás de la marca","Opiniones","Lanzamientos y ofertas"]
+};
+// nombre corto de la destacada de cada pilar (cabe en el círculo del perfil)
+const DEST_CORTO={"Lo que hacemos":"Qué hacemos","Consejos útiles":"Consejos","Mitos y errores frecuentes":"Mitos","Equipo y día a día":"Equipo",
+  "Clientes y opiniones":"Clientes","Novedades y fechas clave":"Novedades","La carta y el plato estrella":"La carta","Detrás de la cocina":"Cocina",
+  "Mitos y curiosidades":"Curioso","Producto y proveedores":"Producto","Clientes y momentos":"Clientes","Eventos y fechas":"Eventos",
+  "Tratamientos y servicios":"Servicios","Consejos de prevención":"Consejos","El equipo":"Equipo","Preguntas frecuentes":"Dudas",
+  "Novedades del centro":"Novedades","Antes y después":"Antes/después","Tendencias":"Tendencias","Consejos de cuidado":"Cuidados",
+  "Clientas y clientes":"Clientes","Ofertas y fechas":"Ofertas","Cursos y grupos":"Cursos","Consejos de estudio":"Consejos",
+  "Errores frecuentes":"Errores","Profesores y día a día":"Profes","Logros del alumnado":"Logros","Plazos y matrículas":"Matrícula",
+  "Producto estrella":"Producto","Cómo se usa":"Cómo se usa","Consejos y mitos":"Consejos","Detrás de la marca":"Nosotros",
+  "Opiniones":"Opiniones","Lanzamientos y ofertas":"Novedades"};
+const ESTILOS = [
+  {v:"bloques",l:"Bloques de color",d:"Diseño con tus colores. No necesita fotos."},
+  {v:"tipografica",l:"Tipográfica",d:"Sobria y elegante, letra grande."},
+  {v:"foto_franja",l:"Foto con franja",d:"Tu foto arriba y el título en una franja de color."},
+  {v:"foto_completa",l:"Foto completa",d:"La foto ocupa todo y el título va encima."},
+  {v:"foto_marco",l:"Foto enmarcada",d:"La foto enmarcada sobre tu color."}
+];
+const esFotoEstilo = v => v.startsWith("foto");
+const PATRONES={muchas:[1,1,1,0],mitad:[1,0],pocas:[1,0,0,0],ninguna:[0]};
+function nivelFotos(d){
+  const est=d.estilos||estilosRecomendados(d);
+  if(!est.some(esFotoEstilo)) return "ninguna";
+  if(d.fotos==="muchas"||d.fotosNuevas==="semana") return "muchas";
+  if(d.fotos==="algunas"||d.fotosNuevas==="mes") return d.preferencia==="stock"?"mitad":"mitad";
+  return d.preferencia==="propias"?"ninguna":"pocas";   // sin fotos propias: algo de stock, sin abusar
+}
+function estilosRecomendados(d){
+  if(d.fotos==="muchas"||d.fotosNuevas==="semana") return ["foto_franja","bloques"];
+  if(d.fotos==="algunas"||d.fotosNuevas==="mes") return ["foto_marco","bloques"];
+  return ["bloques","tipografica"];
+}
+const RITMOS = {
+  basico:{l:"Básico",car:3,reels:1,hist:"3 por semana"},
+  estandar:{l:"Estándar",car:5,reels:2,hist:"1 al día"},
+  intenso:{l:"Intenso",car:7,reels:3,hist:"1 al día"}
+};
+
+/* ===== Pasos y preguntas ===== */
+const yes = v => v==="si_usa"||v==="si_abandonada";
+const STEPS = [
+ {id:"inicio",titulo:"Bienvenida",intro:true},
+ {id:"negocio",titulo:"Tu negocio",lead:"Con esto sabremos de qué hablar en tus publicaciones.",fields:[
+  {id:"nombre",type:"text",label:"Nombre comercial",req:true,ph:"Panadería La Espiga"},
+  {id:"sector",type:"choice",label:"Sector",req:true,options:SECTORES},
+  {id:"actividad",type:"text",label:"¿A qué te dedicas, en una frase?",req:true,ph:"Pan de masa madre y bollería artesana en Ruzafa"},
+  {id:"zona",type:"choice",label:"¿A quién atiendes?",req:true,options:[
+    {v:"local",l:"Mi barrio o ciudad",tip:"Usaremos ubicación y temas locales (fiestas, barrio) para que te encuentren cerca."},
+    {v:"provincia",l:"Mi provincia"},{v:"espana",l:"Toda España"},
+    {v:"online",l:"Solo online",tip:"Daremos más peso a enlaces y producto, y menos a la ubicación."}]},
+  {id:"estrella",type:"textarea",label:"Tus 3 productos o servicios estrella",req:true},
+  {id:"diferencia",type:"textarea",label:"¿Qué te diferencia de la competencia?"},
+  {id:"web",type:"text",label:"Web (si tienes)",ph:"https://"}
+ ]},
+ {id:"instagram",titulo:"Tu Instagram",lead:"Partimos de donde estés. Si no tienes cuenta, no pasa nada.",fields:[
+  {id:"tieneIG",type:"choice",cards:true,label:"¿Tienes Instagram para el negocio?",req:true,options:[
+    {v:"si_usa",l:"Sí, y publico",d:"Aunque sea de vez en cuando"},
+    {v:"si_abandonada",l:"Sí, pero está parada",d:"Hace meses que no publico",tip:"La reactivamos: primero ordenamos el perfil (foto, biografía, destacadas) y después arranca el calendario."},
+    {v:"no",l:"No tengo",d:"Empezamos de cero",tip:"La creamos contigo como cuenta profesional en la videollamada de alta. Solo necesitas el móvil y un email."}]},
+  {id:"usuario",type:"text",label:"Tu @ de Instagram",req:true,ph:"@tunegocio",show:d=>yes(d.tieneIG)},
+  {id:"usuarioDeseado",type:"text",label:"¿Qué @ te gustaría?",ph:"@tunegocio",h:"Comprobaremos que esté libre y te propondremos alternativas si no.",show:d=>d.tieneIG==="no"},
+  {id:"tipoCuenta",type:"choice",label:"¿Qué tipo de cuenta es?",h:"Lo ves en Configuración → Tipo de cuenta y herramientas.",req:true,show:d=>yes(d.tieneIG),options:[
+    {v:"empresa",l:"Profesional · Empresa",tip:"Perfecto: es el tipo de cuenta que necesitamos para publicar de forma automática."},
+    {v:"creador",l:"Profesional · Creador",tip:"Sirve igual. Si quieres, la pasamos a Empresa para tener botones de contacto."},
+    {v:"personal",l:"Personal",tip:"La pasamos a profesional en 2 minutos durante el alta. No pierdes seguidores ni publicaciones.",warn:true},
+    {v:"nose",l:"No lo sé",tip:"Lo comprobamos juntos en la videollamada."}]},
+  {id:"seguidores",type:"choice",label:"Seguidores aproximados",show:d=>yes(d.tieneIG),options:[
+    {v:"<300",l:"Menos de 300"},{v:"300-1000",l:"300 a 1.000"},{v:"1000-5000",l:"1.000 a 5.000"},{v:">5000",l:"Más de 5.000"}]},
+  {id:"paginaFB",type:"choice",label:"¿Tienes página de Facebook del negocio?",options:[
+    {v:"vinculada",l:"Sí, vinculada a Instagram"},
+    {v:"suelta",l:"Sí, pero no vinculada",tip:"Las vinculamos en el alta; así luego podemos publicar también en Facebook si lo quieres."},
+    {v:"no",l:"No",tip:"No es imprescindible para empezar. Si hiciera falta para la conexión, la creamos vacía en un minuto."},
+    {v:"nose",l:"No lo sé"}]},
+  {id:"otrasRedes",type:"multi",label:"¿Usas otras redes o perfiles?",h:"Por ahora trabajamos Instagram; lo apuntamos para más adelante.",options:[
+    {v:"facebook",l:"Facebook"},{v:"tiktok",l:"TikTok"},{v:"linkedin",l:"LinkedIn"},{v:"google",l:"Ficha de Google"},{v:"whatsapp",l:"WhatsApp Business"}]}
+ ]},
+ {id:"acceso",titulo:"Conexión segura",lead:"Nunca te pediremos tu contraseña. Conectamos tu cuenta con el inicio de sesión oficial de Meta (Instagram/Facebook): tú autorizas y puedes retirar el permiso cuando quieras.",fields:[
+  {id:"_connect",type:"connect"},
+  {id:"quienAcceso",type:"choice",label:"¿Quién entra hoy en la cuenta?",req:true,show:d=>yes(d.tieneIG),options:[
+    {v:"yo",l:"Yo mismo/a"},
+    {v:"otra",l:"Otra persona o una agencia",tip:"Le pediremos que te devuelva el control o que nos dé acceso desde la configuración de Meta. Te damos el mensaje ya escrito.",warn:true},
+    {v:"perdido",l:"No recuerdo la contraseña",tip:"Antes del alta la recuperas desde «¿Has olvidado la contraseña?» con tu email o teléfono. Si no puedes, te guiamos en la videollamada.",warn:true}]},
+  {id:"franja",type:"multi",label:"¿Cuándo te viene bien la videollamada de 20 minutos?",options:[
+    {v:"mananas",l:"Mañanas"},{v:"mediodia",l:"Mediodía"},{v:"tardes",l:"Tardes"}]},
+  {id:"okConexion",type:"check",req:true,label:"Entiendo que la conexión se hace con el inicio de sesión oficial de Meta y que no tengo que dar mi contraseña a nadie."}
+ ]},
+ {id:"clientes",titulo:"Tus clientes",lead:"De aquí salen la mayoría de ideas: lo que preguntan, lo que les preocupa y lo que creen mal.",fields:[
+  {id:"clienteIdeal",type:"textarea",label:"¿Quién te compra?",req:true,ph:"Familias del barrio de 30–45 años que buscan pan de calidad para el fin de semana"},
+  {id:"preguntas",type:"textarea",label:"Preguntas que te hacen siempre",h:"Cada pregunta frecuente es una publicación."},
+  {id:"mitos",type:"textarea",label:"Mitos o errores frecuentes en tu sector"},
+  {id:"fechas",type:"textarea",label:"Fechas fuertes del año",ph:"Fallas, Navidad, vuelta al cole, rebajas…"}
+ ]},
+ {id:"marca",titulo:"Tu marca",lead:"Las plantillas se hacen con tus colores y tu logo para que el perfil se reconozca de un vistazo.",fields:[
+  {id:"tieneLogo",type:"choice",label:"¿Tienes logo?",req:true,options:[
+    {v:"si",l:"Sí"},
+    {v:"no",l:"No",tip:"Usaremos el nombre del negocio escrito con una tipografía cuidada. Si más adelante quieres un logo, es un extra."}]},
+  {id:"logo",type:"file",label:"Sube tu logo",h:"Mejor en PNG con fondo transparente. Si no lo tienes a mano, nos lo envías después.",show:d=>d.tieneLogo==="si"},
+  {id:"tieneColores",type:"choice",label:"¿Tienes colores corporativos?",req:true,options:[
+    {v:"logo",l:"Cogerlos de mi logo",show:d=>!!d.logo,tip:"Hemos sacado la paleta de tu logo. Retoca cualquier color si no te convence."},
+    {v:"si",l:"Sí, los indico yo"},
+    {v:"no",l:"No, proponedme",tip:"Te proponemos una paleta según tu sector. Puedes cambiarla después."}]},
+  {id:"colores",type:"colors",label:"Tus colores",h:"Pulsa el cuadro de color o escribe el código (ejemplo: #7A4E2D).",show:d=>d.tieneColores==="si"||d.tieneColores==="logo"},
+  {id:"_paleta",type:"palette",show:d=>d.tieneColores==="no"},
+  {id:"tipografia",type:"choice",label:"Tipografía",options:[
+    {v:"propia",l:"Tengo una propia",tip:"Nos mandas los archivos y comprobamos que la licencia permite usarla en redes."},
+    {v:"proponed",l:"Proponedme una",tip:"Usaremos tipografías libres de Google Fonts, con licencia para uso comercial."}]},
+  {id:"tono",type:"multi",max:2,label:"Tono (elige hasta 2)",req:true,options:[
+    {v:"cercano",l:"Cercano"},{v:"profesional",l:"Profesional"},{v:"divertido",l:"Divertido"},{v:"tecnico",l:"Técnico"},{v:"inspirador",l:"Inspirador"}]},
+  {id:"trato",type:"choice",label:"¿Cómo hablas a tus clientes?",req:true,options:[{v:"tu",l:"De tú"},{v:"usted",l:"De usted"}]},
+  {id:"emojis",type:"choice",label:"Emojis",options:[{v:"si",l:"Sí, bastantes"},{v:"pocos",l:"Pocos"},{v:"no",l:"Ninguno"}]},
+  {id:"hashtags",type:"text",label:"Hashtags propios (si tienes)",ph:"#laespigaruzafa"},
+  {id:"prohibidos",type:"textarea",label:"Palabras o temas que NO quieres ver nunca",ph:"Política, comparaciones con la competencia…"},
+  {id:"referencias",type:"textarea",label:"2 o 3 cuentas de Instagram que te gusten y por qué"},
+  {id:"_mosaico",type:"mosaic"}
+ ]},
+ {id:"contenido",titulo:"Contenido y tiempo",lead:"Aquí decidimos cuánto se publica y con qué material. Lo que no tengas, lo ponemos nosotros.",fields:[
+  {id:"objetivo",type:"choice",label:"¿Qué quieres conseguir sobre todo?",req:true,options:[
+    {v:"reservas",l:"Reservas o llamadas"},{v:"web",l:"Visitas a la web"},{v:"ventas",l:"Ventas online"},{v:"notoriedad",l:"Que me conozcan"}]},
+  {id:"cta",type:"choice",label:"¿A dónde enviamos a la gente?",req:true,options:[
+    {v:"whatsapp",l:"WhatsApp"},{v:"bio",l:"Enlace de la biografía"},{v:"reservar",l:"Reservar cita"},{v:"comprar",l:"Comprar online"},{v:"llamar",l:"Llamar"},{v:"visitar",l:"Visitar el local"}]},
+  {id:"tiempo",type:"choice",cards:true,label:"¿Cuánto tiempo puedes dedicar tú a la semana?",req:true,options:[
+    {v:"nada",l:"Casi nada",d:"Que funcione solo",tip:"Revisas la primera tanda y a partir de ahí publica solo. Solo te llegará un email con comentarios para contestar."},
+    {v:"15",l:"15 minutos",d:"Revisar y contestar",tip:"Te mandamos cada tanda (cada 15 días) para que le des el visto bueno en 10 minutos."},
+    {v:"60",l:"1 hora o más",d:"Puedo hacer fotos",tip:"Con fotos y vídeos tuyos el contenido funciona mejor. Te damos ideas de qué grabar cada semana."}]},
+  {id:"fotos",type:"choice",label:"¿Tienes fotos propias del negocio, productos o equipo?",req:true,options:[
+    {v:"muchas",l:"Sí, muchas",tip:"Nos las pasas una vez (carpeta o enlace) y las vamos usando sin repetir."},
+    {v:"algunas",l:"Algunas",tip:"Mezclamos tus fotos con diseños de color e imágenes de stock con licencia comercial."},
+    {v:"no",l:"No",tip:"Sin problema: usamos diseños con tus colores e imágenes de stock libres de derechos. Tu perfil no se quedará vacío."}]},
+  {id:"fotosNuevas",type:"choice",label:"¿Puedes hacer fotos nuevas con el móvil?",req:true,options:[
+    {v:"semana",l:"Cada semana",tip:"Te damos el enlace «Enviar foto»: haces la foto, escribes qué resaltar y pulsas Enviar. Nada más."},
+    {v:"mes",l:"Cada mes",tip:"Te damos el enlace «Enviar foto» y te recordamos una vez al mes qué fotos nos vendrían bien."},
+    {v:"no",l:"No",tip:"Trabajamos con diseño y stock. Si algún día haces una foto, nos la mandas por email."}]},
+  {id:"videos",type:"choice",label:"¿Puedes grabar vídeos cortos (10–30 s)?",req:true,options:[
+    {v:"si",l:"Sí"},
+    {v:"alguno",l:"Alguno suelto",tip:"Tus vídeos se usan primero; el resto de reels se completan con vídeo de stock y música libre."},
+    {v:"no",l:"No",tip:"Los reels se montan con vídeo de stock, tus textos y música libre de derechos. No tienes que salir en cámara."}]},
+  {id:"preferencia",type:"choice",label:"¿Qué prefieres en tus publicaciones?",options:[
+    {v:"propias",l:"Mis fotos y vídeos"},{v:"mezcla",l:"Una mezcla"},{v:"stock",l:"Imágenes de stock y diseño"}],
+    show:d=>d.fotos&&d.fotos!=="no"},
+  {id:"estilos",type:"estilos",max:2,label:"Estilo de tus publicaciones (elige 1 o 2)",h:"Si eliges uno de color y uno de foto, tu perfil alternará foto y color como un tablero de ajedrez. Las de foto usan tus fotos o, si no hay, imágenes de stock con licencia.",req:true},
+  {id:"_mosaico2",type:"mosaic",conFotos:true},
+  {id:"ritmo",type:"ritmo",label:"Ritmo de publicación",req:true},
+  {id:"aprobacion",type:"choice",label:"¿Quieres aprobar el contenido antes de que salga?",req:true,options:[
+    {v:"cada",l:"Sí, cada tanda",tip:"Cada 15 días recibes la tanda; si no contestas en 3 días, se publica tal cual."},
+    {v:"primera",l:"Solo la primera",tip:"Revisas el primer mes con calma y después se publica solo."},
+    {v:"no",l:"No, que salga sola",tip:"Lo revisamos nosotros. Cualquier tema sensible (precios, salud, legal) te lo consultamos igualmente.",warn:true}]}
+ ]},
+ {id:"contacto",titulo:"Contacto",lead:"Para los avisos de comentarios, el informe semanal y para organizar el alta.",fields:[
+  {id:"persona",type:"text",label:"Tu nombre",req:true},
+  {id:"email",type:"email",label:"Email para avisos e informes",req:true},
+  {id:"telefono",type:"tel",label:"Teléfono o WhatsApp"},
+  {id:"okDatos",type:"check",req:true,label:"Acepto que uséis estos datos para preparar el alta del servicio. Antes de empezar firmaremos el contrato de servicio y el de tratamiento de datos."}
+ ]},
+ {id:"resultado",titulo:"Resumen",result:true}
+];
+
+/* ===== Estado ===== */
+const S = {step:0, d:{}, interno:false, cl:{}, notas:""};
+const KEY = "altaIG.v1";
+try{ const s = JSON.parse(localStorage.getItem(KEY)||"null"); if(s){S.step=s.step||0;S.d=s.d||{};S.cl=s.cl||{};S.notas=s.notas||"";} }catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify({step:S.step,d:S.d,cl:S.cl,notas:S.notas})); }catch(e){} }
+if(location.hash==="#interno") S.interno=true;
+
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const visible = f => !f.show || f.show(S.d);
+
+/* ===== Lógica de recomendación ===== */
+function slug(s){return String(s||"cliente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"cliente";}
+function ritmoRecomendado(d){
+  let p = 1; // 0 básico, 1 estándar, 2 intenso
+  if(d.objetivo==="ventas"||d.objetivo==="notoriedad") p++;
+  if(d.zona==="local"&&d.objetivo==="reservas") p--;
+  if(d.tieneIG==="no") p=Math.min(p,1);
+  return ["basico","estandar","intenso"][Math.max(0,Math.min(2,p))];
+}
+function paleta(d){
+  if((d.tieneColores==="si"||d.tieneColores==="logo")&&d.colores) return d.colores;
+  const base = PALETAS[d.sector]||PALETAS.otro;
+  return {principal:base[0],fondo:base[1],acento:base[2],texto:base[3]};
+}
+function pctPropio(d){ return {muchas:75,mitad:50,pocas:25,ninguna:0}[nivelFotos(d)]; }
+function tiempoCliente(d){
+  let m=0;
+  if(d.aprobacion==="cada") m+=10;
+  m+=15; // contestar comentarios
+  if(d.fotosNuevas==="semana") m+=10; else if(d.fotosNuevas==="mes") m+=3;
+  return m;
+}
+function diagnostico(d){
+  const out=[];
+  const it=(area,estado,situacion,solucion)=>out.push({area,estado,situacion,solucion});
+  // Cuenta
+  if(d.tieneIG==="no") it("Cuenta de Instagram","accion","No tienes cuenta todavía.",`La creamos como cuenta profesional${d.usuarioDeseado?` con el nombre ${d.usuarioDeseado}`:""} en la videollamada de alta.`);
+  else if(d.tipoCuenta==="personal") it("Cuenta de Instagram","accion","Tu cuenta es personal.","La pasamos a profesional en el alta. No pierdes seguidores ni publicaciones.");
+  else if(d.tipoCuenta==="nose") it("Cuenta de Instagram","accion","No sabemos aún el tipo de cuenta.","Lo comprobamos en la videollamada y, si hace falta, la pasamos a profesional.");
+  else if(d.tieneIG==="si_abandonada") it("Cuenta de Instagram","ok","Tienes cuenta profesional, pero está parada.","Renovamos foto, biografía y destacadas antes de arrancar el calendario.");
+  else it("Cuenta de Instagram","ok","Cuenta profesional activa.","Lista para conectar.");
+  // Acceso
+  if(!d.okConexion) it("Conexión","bloqueo","Falta tu conformidad con la conexión oficial.","Vuelve al paso «Conexión segura» y marca la casilla.");
+  else if(d.quienAcceso==="otra") it("Conexión","accion","La cuenta la lleva otra persona o una agencia.","Te damos el mensaje para pedirle el acceso. Sin eso no podemos conectar.");
+  else if(d.quienAcceso==="perdido") it("Conexión","accion","No recuerdas la contraseña.","Recupérala antes de la videollamada desde «¿Has olvidado la contraseña?».");
+  else it("Conexión","ok","Conexión con el inicio de sesión oficial de Meta.","Se hace en 20 minutos por videollamada. Nunca guardamos tu contraseña.");
+  // Marca
+  const p=paleta(d);
+  if(d.tieneLogo==="si"&&!d.logo) it("Marca","accion","Tienes logo, pero no lo has subido.","Envíanoslo en PNG por email antes del alta.");
+  else if(d.tieneLogo==="no") it("Marca","ok","Sin logo.","Usaremos tu nombre con una tipografía cuidada y tus colores.");
+  else it("Marca","ok","Logo recibido.","Lo usamos en portadas, historias y destacadas.");
+  it("Colores","ok",d.tieneColores==="si"?"Usaremos tus colores.":d.tieneColores==="logo"?"Colores sacados de tu logo.":"Paleta propuesta según tu sector.",`Principal ${p.principal}, fondo ${p.fondo}, acento ${p.acento}.`);
+  // Material
+  const pct=pctPropio(d);
+  it("Fotos","ok",
+    d.fotos==="no"?"No tienes fotos propias.":d.fotos==="muchas"?"Tienes muchas fotos propias.":"Tienes algunas fotos propias.",
+    (pct?`${pct}% de las publicaciones con foto${d.fotos==="no"&&d.fotosNuevas==="no"?" (imágenes de stock con licencia comercial)":""}; el resto, diseño con tus colores.`:"Diseño con tus colores; si algún día nos mandas fotos, las incorporamos.")+(d.fotosNuevas&&d.fotosNuevas!=="no"?" Recibirás el enlace «Enviar foto» para el móvil.":""));
+  const est=d.estilos||estilosRecomendados(d);
+  it("Estilo","ok",`Plantillas: ${est.map(x=>(ESTILOS.find(o=>o.v===x)||{l:x}).l).join(" + ")}.`,
+    ({muchas:"3 de cada 4 publicaciones con foto (dos fotos por carrusel).",mitad:"1 de cada 2 con foto: tablero de ajedrez foto / color.",
+      pocas:"1 de cada 4 con foto"+(d.fotos==="no"?" (de stock con licencia mientras no nos mandes tuyas)":"")+"; el resto, diseño con tus colores.",
+      ninguna:"Todo diseño con tus colores, sin depender de fotos."})[nivelFotos(d)]+(nivelFotos(d)!=="ninguna"?" Si llegan menos fotos, se ajusta solo.":""));
+  it("Reels","ok",
+    d.videos==="si"?"Puedes grabar vídeos.":d.videos==="alguno"?"Puedes grabar algún vídeo.":"No vas a grabar vídeos.",
+    d.videos==="no"?"Reels de 30 s con vídeo de stock, tus textos y música libre. No sales en cámara.":"Tus vídeos se usan primero; el resto con stock y música libre.");
+  // Sensibles
+  if(d.sector==="salud") it("Contenido sensible","accion","Sector salud.","Las afirmaciones sanitarias se publican solo con tu validación.");
+  if(d.aprobacion==="no"&&d.sector==="salud") it("Aprobación","accion","Pides que salga sin revisar, pero tu sector es sensible.","Te recomendamos al menos revisar la primera tanda.");
+  return out;
+}
+function listo(d){ return diagnostico(d).every(x=>x.estado!=="bloqueo"); }
+
+/* ===== Salidas ===== */
+function buildRespuestas(){
+  const d=S.d; const r={_meta:{servicio:CONFIG.servicio,version:CONFIG.version,fecha:new Date().toISOString()}};
+  if(d.logoPaleta) r.logoPaleta=d.logoPaleta.extra;
+  STEPS.forEach(st=>(st.fields||[]).forEach(f=>{ if(f.id[0]!=="_"&&d[f.id]!==undefined&&visible(f)) r[f.id]=d[f.id]; }));
+  r.ritmo = d.ritmo||ritmoRecomendado(d);
+  r.estilos = d.estilos||estilosRecomendados(d);
+  r.paleta = paleta(d);
+  r._marca = buildMarca();   // lo usa alta/alta.py tal cual (mismo esquema que el motor)
+  r._plan = buildPlan();
+  r._diagnostico = diagnostico(d);
+  return r;
+}
+const VIDEO_Q={comercio:"small shop owner customers",restauracion:"restaurant kitchen cooking",salud:"clinic friendly professional",estetica:"beauty salon hair styling",academia:"students classroom learning",taller:"mechanic workshop tools",online:"package shipping small business",otro:"small business owner working"};
+function buildMarca(){
+  // Mismo esquema que clientes/<id>/marca.json del motor (Herramienta-Contenido-IG)
+  const d=S.d, id=slug(d.nombre), pil=(PILARES[d.sector]||PILARES._base);
+  const pilares={}, dest={}, sub={};
+  pil.forEach((p,i)=>{ const k="P"+(i+1); pilares[k]=p; dest[k]=DEST_CORTO[p]||p.split(" ").find(w=>w.length>3)||p; });
+  const kq="P"+(pil.length+1); pilares[kq]="Tu turno"; dest[kq]="Tu turno"; sub["Tu turno"]="preguntas";
+  const ctas={whatsapp:"Escríbenos por WhatsApp",bio:"Más info en el enlace de la bio",reservar:"Reserva tu cita",comprar:"Compra online",llamar:"Llámanos",visitar:"Te esperamos en el local"};
+  return {
+    id, nombre:d.nombre||"", instagram:(d.usuario||d.usuarioDeseado||"").replace(/^@/,""), sector:d.sector||"otro",
+    colores:paleta(d),
+    fuentes:d.tipografia==="propia"?{titulo:"assets/fonts/Titulo.ttf",texto:"assets/fonts/Texto.ttf",texto_semi:"assets/fonts/Texto.ttf"}
+      :{titulo:"Quicksand.ttf",texto:"Poppins-Regular.ttf",texto_semi:"Poppins-SemiBold.ttf",peso_titulo:700},
+    logo:d.tieneLogo==="si"?"assets/logo.png":null, logo_claro:null, logo_texto:(d.nombre||"").toLowerCase(), logo_etiqueta:null,
+    adorno:"puntos", plantillas:d.estilos||estilosRecomendados(d), fotos:{nivel:"auto",nivel_max:nivelFotos(d)}, pilares, pilar_pregunta:kq, destacadas:dest, destacadas_sub:sub, textos:{},
+    cta_por_defecto:ctas[d.cta]||"", video_query_defecto:VIDEO_Q[d.sector]||VIDEO_Q.otro,
+    idioma:"es-ES", tuteo:d.trato!=="usted",
+    tono:d.tono||[], emojis:d.emojis||"pocos", hashtags:d.hashtags||"",
+    contenido_propio:{fotos:d.fotos||"no",videos:d.videos||"no",preferencia:d.preferencia||(d.fotos==="no"?"stock":"mezcla"),fotos_nuevas:d.fotosNuevas||"no"},
+    aprobacion_tandas:d.aprobacion!=="no", media_host:"r2", email_avisos:d.email||""
+  };
+}
+function buildPlan(){
+  // Mismo esquema que clientes/<id>/content/plan.json del motor
+  const k=S.d.ritmo||ritmoRecomendado(S.d);
+  const dias={basico:["lunes","miercoles","viernes"],estandar:["lunes","martes","miercoles","jueves","viernes"],intenso:["lunes","martes","miercoles","jueves","viernes","sabado","domingo"]}[k];
+  const reels={basico:["jueves"],estandar:["martes","sabado"],intenso:["lunes","miercoles","sabado"]}[k];
+  return {activo:false, ritmo:k,
+    carrusel:{dias,hora:"13:30"}, dato:{hora:"08:00"}, pregunta:{activo:true,dia:"domingo",hora:"10:00"},
+    reels:{activo:true,dias:reels,hora:"12:00",pilares:["P1","P2","P4"]},
+    tanda:{dias_minimos_por_delante:21,dias_por_tanda:35}, aprobacion:S.d.aprobacion||"primera",
+    mosaico:{activo:true,secuencia:["principal","fondo","principal","acento"],desfase:0}};
+}
+function resumenTexto(){
+  const d=S.d, k=d.ritmo||ritmoRecomendado(d), r=RITMOS[k];
+  let t=`ALTA ${CONFIG.servicio} — ${d.nombre||""}\n${d.actividad||""}\nInstagram: ${d.usuario||d.usuarioDeseado||"(sin cuenta)"}\nContacto: ${d.persona||""} · ${d.email||""} · ${d.telefono||""}\n\nPlan: ${r.l} — ${r.car} carruseles + ${r.reels} reels por semana, historias ${r.hist}\n\nDIAGNÓSTICO\n`;
+  diagnostico(d).forEach(x=>{t+=`- [${x.estado.toUpperCase()}] ${x.area}: ${x.situacion} → ${x.solucion}\n`;});
+  return t;
+}
+function checklist(){
+  const d=S.d, id=slug(d.nombre), ID=id.toUpperCase().replace(/-/g,"_"), L=[];
+  L.push(["alta",`Guardar respuestas como <code>respuestas_${id}.json</code> y ejecutar <code>python alta/alta.py respuestas_${id}.json --id ${id}</code>`]);
+  if(d.tieneIG==="no") L.push(["crear",`Crear cuenta profesional ${esc(d.usuarioDeseado||"")} con el cliente`]);
+  if(d.tipoCuenta==="personal"||d.tipoCuenta==="nose") L.push(["pro","Comprobar tipo de cuenta y pasar a profesional"]);
+  if(d.quienAcceso==="otra") L.push(["agencia","Enviar al cliente el mensaje para pedir el acceso a su agencia o a quien lleve la cuenta"]);
+  if(d.quienAcceso==="perdido") L.push(["recuperar","Confirmar que ha recuperado la contraseña antes de la videollamada"]);
+  if(d.paginaFB==="suelta") L.push(["fb","Vincular página de Facebook con Instagram"]);
+  L.push(["tester","Invitar la cuenta como tester de la app de Meta y que acepte la invitación"]);
+  L.push(["token",`Generar token y guardar secrets <code>IG_ACCESS_TOKEN_${ID}</code> e <code>IG_USER_ID_${ID}</code> con <code>gh secret set</code>`]);
+  if(d.tieneLogo==="si"&&!d.logo) L.push(["logo","Pedir el logo en PNG"]);
+  if(d.tipografia==="propia") L.push(["fuente","Pedir archivos de la tipografía y revisar la licencia"]);
+  if(d.fotos&&d.fotos!=="no") L.push(["fotos","Recoger su carpeta de fotos y subirla a la biblioteca"]);
+  if(d.fotosNuevas&&d.fotosNuevas!=="no") L.push(["enviar","Enviarle el enlace «Enviar foto» y pedirle que lo añada a la pantalla de inicio"]);
+  if(d.sector==="salud") L.push(["salud","Marcar en GUIA_TANDAS.md: afirmaciones sanitarias solo con validación"]);
+  L.push(["contrato","Firmar contrato de servicio y de encargado del tratamiento (RGPD)"]);
+  L.push(["tanda","Generar la primera tanda de 35 días y enviarla a revisión"]);
+  L.push(["activar",`Poner <code>"activo": true</code> en <code>clientes/${id}/plan.json</code>`]);
+  return L;
+}
+function horasAlta(){
+  const d=S.d; let h=1.5;
+  if(d.tieneIG==="no") h+=.5;
+  if(d.tipoCuenta==="personal"||d.tipoCuenta==="nose") h+=.25;
+  if(d.quienAcceso==="otra"||d.quienAcceso==="perdido") h+=.5;
+  if(d.tieneColores==="no") h+=.25;
+  if(d.tieneLogo==="no") h+=.25;
+  if(d.fotos==="muchas") h+=.5;
+  if(d.sector==="salud") h+=.25;
+  return h;
+}
+
+/* ===== Render ===== */
+function renderProgress(){
+  const n=STEPS.length-1;
+  $("#progress").innerHTML = STEPS.slice(1).map((s,i)=>`<span class="${i<S.step?"done":""}"></span>`).join("");
+  $("#steplabel").textContent = S.step===0?"":S.step===n?"Resumen final":`Paso ${S.step} de ${n-1} · ${STEPS[S.step].titulo}`;
+}
+function tipFor(f){
+  const v=S.d[f.id]; if(!v||!f.options) return "";
+  const o=f.options.find(o=>o.v===v); if(!o||!o.tip) return "";
+  return `<div class="sol${o.warn?" warn":""}"><b>${o.warn?"Lo resolvemos así":"Solución"}</b>${esc(o.tip)}</div>`;
+}
+function fieldHTML(f){
+  const d=S.d, v=d[f.id];
+  const lab = f.label?`<label class="t" ${["text","email","tel","textarea"].includes(f.type)?`for="f_${f.id}"`:""}>${esc(f.label)}${f.req?' <span class="req">*</span>':""}</label>`:"";
+  const h = f.h?`<p class="h">${esc(f.h)}</p>`:"";
+  let body="";
+  switch(f.type){
+    case "text": case "email": case "tel":
+      body=`<input id="f_${f.id}" type="${f.type}" data-k="${f.id}" value="${esc(v||"")}" placeholder="${esc(f.ph||"")}">`; break;
+    case "textarea":
+      body=`<textarea id="f_${f.id}" data-k="${f.id}" placeholder="${esc(f.ph||"")}">${esc(v||"")}</textarea>`; break;
+    case "choice":
+      body=`<div class="opts${f.cards?" cards":""}" role="group">${f.options.filter(o=>!o.show||o.show(d)).map(o=>`<button type="button" class="opt" data-choice="${f.id}" data-v="${o.v}" aria-pressed="${v===o.v}">${esc(o.l)}${o.d?`<small>${esc(o.d)}</small>`:""}</button>`).join("")}</div>${tipFor(f)}`; break;
+    case "multi": {
+      const arr=v||[];
+      body=`<div class="opts" role="group">${f.options.map(o=>`<button type="button" class="opt" data-multi="${f.id}" data-v="${o.v}" aria-pressed="${arr.includes(o.v)}">${esc(o.l)}</button>`).join("")}</div>`; break; }
+    case "check":
+      return `<div class="q" data-field="${f.id}"><label class="check"><input type="checkbox" id="f_${f.id}" data-check="${f.id}" ${v?"checked":""}><span>${esc(f.label)}${f.req?' <span class="req">*</span>':""}</span></label></div>`;
+    case "file":
+      body=`<input type="file" id="f_${f.id}" accept="image/png,image/jpeg,image/svg+xml,image/webp" data-file="${f.id}">${v?`<div><img class="logo-prev" src="${v}" alt="Logo subido"></div>`:""}`; break;
+    case "colors": {
+      const c=v||paleta({...d,tieneColores:"no"});
+      body=`<div class="colors">${[["principal","Principal"],["fondo","Fondo"],["acento","Acento"],["texto","Texto"]].map(([k,l])=>`<div class="crow"><span class="cpick" data-sw="${k}" style="background:${c[k]}"><input type="color" data-color="${k}" value="${c[k]}" aria-label="Elegir color ${l}"></span><span class="cfield"><span class="clab">${l}</span><input type="text" data-hex="${k}" value="${c[k].toUpperCase()}" maxlength="7" spellcheck="false" aria-label="Código del color ${l}"></span></div>`).join("")}</div>
+      ${d.logoPaleta?`<div class="h" style="margin:12px 0 0">Colores de tu logo: pulsa uno para usarlo como principal.</div><div class="swatches">${d.logoPaleta.extra.map(x=>`<button type="button" class="sw swb" data-usecolor="${x}" style="background:${x}" title="${x}" aria-label="Usar ${x} como principal"></button>`).join("")}</div>`:""}`;
+      if(!v) d.colores=c; break; }
+    case "palette": {
+      const p=paleta(d);
+      return `<div class="q"><div class="sol"><b>Paleta propuesta para tu sector</b>Principal, fondo, acento y texto. Podrás cambiarla en la revisión.</div><div class="swatches">${["principal","fondo","acento","texto"].map(k=>`<div class="sw" style="background:${p[k]}" title="${k} ${p[k]}"></div>`).join("")}</div></div>`; }
+    case "mosaic": {
+      const p=paleta(d), nv=f.conFotos?nivelFotos(d):"ninguna", pat=PATRONES[nv];
+      const seq=["principal","fondo","principal","acento"], tonos=[];
+      // misma lógica que el motor: color sin repetir con la casilla anterior ni con la de encima
+      for(let i=0;i<12;i++){
+        const foto=pat[i%pat.length]===1;
+        let t;
+        if(nv==="ninguna") t=seq[i%seq.length];
+        else{
+          const vec=[tonos[i-1],tonos[i-3]].filter(Boolean).map(x=>x.t);
+          const pref=foto?["principal","acento"]:["fondo","principal","acento"];
+          let ops=pref.filter(c=>!vec.includes(c)); if(!ops.length) ops=pref;
+          const ult=[...tonos].reverse().find(x=>!x.foto);
+          if(!foto&&ult&&ops.length>1) ops=ops.filter(c=>c!==ult.t);
+          t=ops[0];
+        }
+        tonos.push({t,foto});
+      }
+      const cells=tonos.slice(0,9).reverse().map(({t,foto})=>{
+        if(foto) return `<div class="foto"><span style="background:${p[t]};color:${t==="fondo"?p.texto:p.fondo}">Aa</span></div>`;
+        const fg=t==="fondo"?p.texto:p.fondo;
+        return `<div style="background:${p[t]};color:${fg}">Aa</div>`;
+      }).join("");
+      const txt={muchas:"3 de cada 4 publicaciones con foto; las de color forman una diagonal. Dentro de cada carrusel, dos fotos.",
+        mitad:"1 de cada 2 con foto: tablero de ajedrez foto / color.",
+        pocas:"1 de cada 4 con foto, en diagonal; el resto, diseño con tus colores. La foto va en la portada.",
+        ninguna:"Todo diseño con tus colores, alternados para que nunca se toquen dos iguales."}[nv];
+      return `<div class="q"><label class="t">Así se vería tu perfil</label><p class="h">${txt}${f.conFotos&&nv!=="ninguna"?" Si un mes nos llegan menos fotos, se ajusta solo: nunca se queda una casilla sin publicar.":""}</p><div class="mosaic" id="mosaicBox" aria-hidden="true">${cells}</div></div>`; }
+    case "connect":
+      return `<div class="q"><label class="t">Cómo conectamos tu cuenta</label><div class="connect"><span class="fake" aria-hidden="true">Conectar con Instagram</span><span class="h" style="margin:0;flex:1 1 220px">En la videollamada pulsas este botón, inicias sesión tú mismo en Meta y autorizas publicar, leer comentarios y ver estadísticas. Puedes quitar el permiso cuando quieras desde Instagram.</span></div></div>`;
+    case "estilos": {
+      const p=paleta(d), sel=v||[], rec=estilosRecomendados(d);
+      const on=c=>{const h=c.replace("#","");const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return (r*299+g*587+b*114)/1000>150?p.texto:"#FFFFFF";};
+      const bars=(c,n,w)=>Array.from({length:n},(_,i)=>`<i style="background:${c};width:${i===n-1?w:92}%"></i>`).join("");
+      const foto=`background:linear-gradient(160deg,#d8b48c 0%,#a7835f 45%,#6d5440 100%)`;
+      const mock={
+        bloques:`<div class="mk" style="background:${p.principal}"><b class="mkchip" style="background:${p.acento}"></b><span class="mkdots"><u style="background:${p.acento}"></u><u style="background:${p.fondo}"></u></span><div class="mkt">${bars(on(p.principal),3,60)}</div></div>`,
+        tipografica:`<div class="mk" style="background:${p.principal}"><b class="mkline" style="background:${p.acento}"></b><div class="mkt big">${bars(on(p.principal),3,70)}</div></div>`,
+        foto_franja:`<div class="mk" style="background:${p.principal}"><div class="mkph" style="${foto};height:56%"></div><b class="mkchip" style="background:${p.acento};top:50%"></b><div class="mkt" style="top:66%">${bars(on(p.principal),2,55)}</div></div>`,
+        foto_completa:`<div class="mk" style="${foto}"><div class="mkgr" style="background:linear-gradient(transparent 30%,${p.texto} 95%)"></div><b class="mkchip" style="background:${p.acento}"></b><div class="mkt" style="top:62%">${bars("#FFFFFF",2,60)}</div></div>`,
+        foto_marco:`<div class="mk" style="background:${p.principal}"><div class="mkph" style="${foto};left:9%;right:9%;top:8%;height:52%;border-radius:6px"></div><div class="mkt" style="top:70%">${bars(on(p.principal),2,55)}</div></div>`
+      };
+      body=`<div class="opts cards estilos">${ESTILOS.map(o=>`<button type="button" class="opt" data-multi="estilos" data-v="${o.v}" aria-pressed="${sel.includes(o.v)}">${mock[o.v]}<span class="mkname">${esc(o.l)}${rec.includes(o.v)?" · recomendado":""}</span><small>${esc(o.d)}</small></button>`).join("")}</div>
+      ${sel.some(esFotoEstilo)&&d.fotos==="no"&&d.fotosNuevas==="no"?`<div class="sol"><b>Solución</b>Como no tienes fotos, usaremos imágenes de stock con licencia comercial, elegidas para tu sector.</div>`:""}`; break; }
+    case "ritmo": {
+      const rec=ritmoRecomendado(d);
+      body=`<div class="opts cards">${Object.entries(RITMOS).map(([k,r])=>`<button type="button" class="opt" data-choice="ritmo" data-v="${k}" aria-pressed="${(v||"")===k}">${r.l}${k===rec?" · recomendado":""}<small>${r.car} carruseles + ${r.reels} reel${r.reels>1?"s":""} a la semana · historias ${r.hist}</small></button>`).join("")}</div>
+      <div class="sol"><b>Por qué recomendamos ${RITMOS[rec].l}</b>${rec==="intenso"?"Tu objetivo pide alcance: más publicaciones y más reels llegan a más gente nueva.":rec==="basico"?"Para un negocio local que busca reservas, la constancia pesa más que el volumen.":"Es el equilibrio entre constancia y alcance para la mayoría de negocios."} Tú no tienes que hacer nada más por publicar más: se genera solo.</div>`; break; }
+  }
+  return `<div class="q" data-field="${f.id}">${lab}${h}${body}<div class="err" hidden></div></div>`;
+}
+function render(){
+  renderProgress(); save();
+  const st=STEPS[S.step], app=$("#app");
+  if(st.intro){
+    app.innerHTML=`<h1>Tu Instagram, publicado solo</h1>
+    <p class="lead">Contesta unas preguntas (10–12 minutos). En cada paso te decimos cómo lo resolvemos: si no tienes cuenta, fotos o tiempo, también hay solución. Al final verás un resumen con tu plan, que puedes descargar en PDF y enviar.</p>
+    <div class="q"><label class="t">Qué recibes</label><p class="h" style="margin:0">Carruseles, historias y reels con tus colores · publicación automática a las mejores horas · email diario con los comentarios para contestar · informe semanal.</p></div>
+    <div class="q"><label class="t">Lo que no te pediremos</label><p class="h" style="margin:0">Tu contraseña. La conexión se hace con el inicio de sesión oficial de Meta.</p></div>
+    <div class="nav"><span></span><div class="actions" style="margin:0">${Object.keys(S.d).length?`<button class="btn" type="button" id="reset">Empezar de cero</button>`:""}<button class="btn pri" type="button" id="next">${Object.keys(S.d).length?"Continuar":"Empezar"}</button></div></div>`;
+  } else if(st.result){
+    app.innerHTML=resultHTML(); prepararCompartir();
+  } else {
+    app.innerHTML=`<h1>${esc(st.titulo)}</h1>${st.lead?`<p class="lead">${esc(st.lead)}</p>`:""}
+      ${st.fields.filter(visible).map(fieldHTML).join("")}
+      <div class="nav"><button class="btn" type="button" id="prev">Atrás</button><button class="btn pri" type="button" id="next">${S.step===STEPS.length-2?"Ver resumen":"Siguiente"}</button></div>`;
+  }
+  renderInternal();
+}
+/* ===== Resumen final ===== */
+function valorLegible(f,v){
+  if(v===undefined||v===null||v===""||(Array.isArray(v)&&!v.length)) return "";
+  switch(f.type){
+    case "choice": { const o=f.options.find(o=>o.v===v); return o?o.l:String(v); }
+    case "multi": return v.map(x=>(f.options.find(o=>o.v===x)||{l:x}).l).join(", ");
+    case "check": return v?"Sí":"";
+    case "file": return v?"Subido":"";
+    case "colors": return ["principal","fondo","acento","texto"].map(k=>`${k} ${v[k]}`).join(" · ");
+    case "estilos": return v.map(x=>(ESTILOS.find(o=>o.v===x)||{l:x}).l).join(" + ");
+    case "ritmo": { const r=RITMOS[v]; return r?`${r.l}: ${r.car} carruseles + ${r.reels} reels por semana, historias ${r.hist}`:v; }
+    default: return String(v);
+  }
+}
+function respuestasPorSeccion(){
+  const d=S.d; if(!d.ritmo) d.ritmo=ritmoRecomendado(d);
+  return STEPS.map((st,i)=>({i,titulo:st.titulo,items:(st.fields||[])
+    .filter(f=>f.id[0]!=="_"&&f.type!=="check"&&visible(f))
+    .map(f=>({label:f.label,valor:valorLegible(f,d[f.id]),req:f.req}))}))
+    .filter(s=>s.items.length);
+}
+function pasosSiguientes(d){
+  const n=[];
+  if(d.quienAcceso==="perdido") n.push("Recuperar la contraseña de Instagram.");
+  if(d.quienAcceso==="otra") n.push("Pedir el acceso a quien lleva la cuenta (os mandamos el mensaje).");
+  if(d.tieneLogo==="si"&&!d.logo) n.push("Enviar el logo en PNG.");
+  n.push("Videollamada de 20 minutos para conectar la cuenta.");
+  n.push("Primera tanda de 35 días para revisar.");
+  n.push("Visto bueno y empieza a publicarse sola.");
+  return n;
+}
+function nombreArchivo(ext){ const f=new Date().toISOString().slice(0,10); return `Resumen_alta_${slug(S.d.nombre)}_${f}.${ext}`; }
+
+function resultHTML(){
+  const d=S.d, k=d.ritmo||ritmoRecomendado(d), r=RITMOS[k], ok=listo(d), dg=diagnostico(d), p=paleta(d);
+  const secs=respuestasPorSeccion(), fecha=new Date().toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"});
+  const pend=secs.reduce((t,s)=>t+s.items.filter(x=>x.req&&!x.valor).length,0);
+  const tel=(d.telefono||"").replace(/\D/g,""), wa=tel?(tel.length===9?"34"+tel:tel):"";
+  return `<h1>Resumen del alta</h1>
+  <p class="lead" style="margin-bottom:12px">${esc(d.nombre||"Sin nombre")} · ${fecha}</p>
+  <span class="status ${ok&&!pend?"ok":"no"}">${ok&&!pend?"Completo y listo para el alta":pend?`Faltan ${pend} respuesta${pend>1?"s":""} obligatoria${pend>1?"s":""}`:"Hay algo que bloquea el alta"}</span>
+
+  <div class="box sendbox">
+    <h2>Guardar y enviar</h2>
+    <p class="h" style="margin:0 0 4px">El PDF lleva el plan, la paleta, el diagnóstico y todas las respuestas. Es lo que le dejas al cliente.</p>
+    <div class="actions">
+      <button class="btn pri" type="button" id="pdfBtn">Descargar PDF</button>
+      <button class="btn" type="button" id="shareBtn" hidden>Enviar PDF…</button>
+      ${wa?`<a class="btn" href="https://wa.me/${wa}?text=${encodeURIComponent(resumenTexto())}" target="_blank" rel="noopener">Enviar por WhatsApp</a>`:""}
+      <a class="btn" href="mailto:${encodeURIComponent(d.email||"")}?cc=${encodeURIComponent(CONFIG.emailContacto)}&subject=${encodeURIComponent("Resumen de alta Instagram · "+(d.nombre||""))}&body=${encodeURIComponent(resumenTexto().slice(0,1800))}">Enviar por email</a>
+      <button class="btn" type="button" data-copy="resumen">Copiar texto</button>
+    </div>
+    <p class="example">WhatsApp y email envían el resumen en texto; adjunta el PDF si quieres que lo tenga completo.${wa?"":" Si apuntas su teléfono en Contacto, aparece el botón de WhatsApp."}</p>
+  </div>
+
+  <div class="plan"><h2>Plan ${r.l}</h2>
+    <div class="row">
+      <div><div class="n">${r.car}</div><div class="l">carruseles / semana</div></div>
+      <div><div class="n">${r.reels}</div><div class="l">reels / semana</div></div>
+      <div><div class="n">${r.hist==="1 al día"?"7":"3"}</div><div class="l">historias / semana</div></div>
+      <div><div class="n">${tiempoCliente(d)}′</div><div class="l">su tiempo / semana</div></div>
+      <div><div class="n">${pctPropio(d)}%</div><div class="l">con foto</div></div>
+    </div>
+    <div class="swatches" style="margin-top:14px">${["principal","fondo","acento","texto"].map(c=>`<div class="sw" style="background:${p[c]};border-color:transparent" title="${c} ${p[c]}"></div>`).join("")}${d.logo?`<img src="${d.logo}" alt="Logo" style="height:34px;background:#fff;border-radius:6px;padding:3px;margin-left:6px">`:""}</div>
+  </div>
+
+  <h2>Cómo lo resolvemos</h2>
+  <div class="diag">${dg.map(x=>`<div class="item ${x.estado}"><div class="area">${esc(x.area)}<span class="pill">${x.estado==="ok"?"Resuelto":x.estado==="accion"?"Lo hacemos en el alta":"Bloquea"}</span></div><div class="s">${esc(x.situacion)}</div><div>${esc(x.solucion)}</div></div>`).join("")}</div>
+
+  <h2 style="margin-top:24px">Respuestas</h2>
+  ${secs.map(s=>`<div class="box ans"><div class="anshead"><h3>${esc(s.titulo)}</h3><button class="btn sm" type="button" data-goto="${s.i}">Editar</button></div>
+    <dl>${s.items.map(x=>`<dt>${esc(x.label)}</dt><dd class="${x.valor?"":x.req?"empty":"none"}">${x.valor?esc(x.valor):(x.req?"Falta":"Sin responder")}</dd>`).join("")}</dl></div>`).join("")}
+
+  <div class="box"><h2>Siguientes pasos</h2><ol class="next">${pasosSiguientes(d).map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>
+  <div class="nav"><button class="btn" type="button" id="prev">Atrás</button><button class="btn" type="button" id="nuevo">Nueva alta (otro negocio)</button></div>
+  <div id="nuevoConfirm" class="box" hidden><p style="margin:0 0 8px">Se borran las respuestas de <b>${esc(d.nombre||"este negocio")}</b> de este dispositivo. Descarga antes el PDF si lo necesitas.</p><div class="actions"><button class="btn pri" type="button" id="nuevoOk">Borrar y empezar</button><button class="btn" type="button" id="nuevoNo">Cancelar</button></div></div>`;
+}
+
+/* ===== PDF sin librerías (A4, Helvetica) ===== */
+const MM=72/25.4;
+const _ctx=document.createElement("canvas").getContext("2d");
+function anchoPt(t,size,bold){ _ctx.font=`${bold?"bold ":""}${size}px Helvetica, Arial, sans-serif`; return _ctx.measureText(t).width; }
+const W1252={"€":128,"‚":130,"„":132,"…":133,"‘":145,"’":146,"“":147,"”":148,"•":149,"–":150,"—":151};
+function pdfStr(t){
+  t=String(t).replace(/→/g,"->").replace(/′/g," min").replace(/[​-‍﻿]/g,"");
+  let o=""; for(const ch of t){ let c=ch.charCodeAt(0); if(W1252[ch]) c=W1252[ch]; else if(c>255) c=63;
+    if(ch==="("||ch===")"||ch==="\\") o+="\\"+ch; else if(c<32||c>126) o+="\\"+c.toString(8).padStart(3,"0"); else o+=ch; }
+  return "("+o+")";
+}
+function rgbPdf(hex){ return hex2rgb(hex).map(v=>(v/255).toFixed(3)).join(" "); }
+class MiniPDF{
+  constructor(){ this.pages=[]; this.imgs=[]; this.page(); }
+  page(){ this.cur=[]; this.pages.push(this.cur); this.y=18; }
+  text(x,y,t,size=10,bold=false,color="#1A1E2B"){ this.cur.push(`BT /${bold?"F2":"F1"} ${size} Tf ${rgbPdf(color)} rg ${(x*MM).toFixed(2)} ${(842-y*MM).toFixed(2)} Td ${pdfStr(t)} Tj ET`); }
+  rect(x,y,w,h,color){ this.cur.push(`${rgbPdf(color)} rg ${(x*MM).toFixed(2)} ${(842-(y+h)*MM).toFixed(2)} ${(w*MM).toFixed(2)} ${(h*MM).toFixed(2)} re f`); }
+  line(x1,y,x2,color="#DADDE5"){ this.cur.push(`${rgbPdf(color)} RG 0.6 w ${(x1*MM).toFixed(2)} ${(842-y*MM).toFixed(2)} m ${(x2*MM).toFixed(2)} ${(842-y*MM).toFixed(2)} l S`); }
+  image(jpegBin,pw,ph,x,y,w,h){ const n=this.imgs.length; this.imgs.push({bin:jpegBin,pw,ph}); this.cur.push(`q ${(w*MM).toFixed(2)} 0 0 ${(h*MM).toFixed(2)} ${(x*MM).toFixed(2)} ${(842-(y+h)*MM).toFixed(2)} cm /Im${n} Do Q`); }
+  wrap(t,size,bold,maxMm){ const max=maxMm*MM, out=[]; String(t).split("\n").forEach(par=>{ let line=""; par.split(/\s+/).forEach(w=>{ const tst=line?line+" "+w:w; if(anchoPt(tst,size,bold)>max&&line){out.push(line);line=w;} else line=tst; }); out.push(line); }); return out; }
+  para(x,t,size=10,bold=false,color="#1A1E2B",maxMm=174,lh=1.38){ const lines=this.wrap(t,size,bold,maxMm), step=size*lh/MM; lines.forEach(l=>{ this.ensure(step); this.y+=step; this.text(x,this.y,l,size,bold,color); }); }
+  ensure(h){ if(this.y+h>279){ this.page(); } }
+  build(){
+    const objs=[], add=s=>{objs.push(s);return objs.length;};
+    add("<< /Type /Catalog /Pages 2 0 R >>"); add("PAGES");
+    const f1=add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+    const f2=add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+    const imIds=this.imgs.map(im=>add(`<< /Type /XObject /Subtype /Image /Width ${im.pw} /Height ${im.ph} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bin.length} >>\nstream\n${im.bin}\nendstream`));
+    const xo=imIds.length?`/XObject << ${imIds.map((id,i)=>`/Im${i} ${id} 0 R`).join(" ")} >>`:"";
+    const kids=[]; const N=this.pages.length;
+    this.pages.forEach((ops,i)=>{
+      const pie=`BT /F1 8 Tf 0.4 0.42 0.47 rg ${(18*MM).toFixed(2)} ${(842-288*MM).toFixed(2)} Td ${pdfStr(`${CONFIG.servicio} · Resumen de alta · Página ${i+1} de ${N}`)} Tj ET`;
+      const c=ops.concat(pie).join("\n"); const cid=add(`<< /Length ${c.length} >>\nstream\n${c}\nendstream`);
+      kids.push(add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 842] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> ${xo} >> /Contents ${cid} 0 R >>`));
+    });
+    objs[1]=`<< /Type /Pages /Kids [${kids.map(k=>k+" 0 R").join(" ")}] /Count ${kids.length} >>`;
+    let out="%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"; const offs=[];
+    objs.forEach((o,i)=>{ offs.push(out.length); out+=`${i+1} 0 obj\n${o}\nendobj\n`; });
+    const xref=out.length;
+    out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+offs.map(o=>String(o).padStart(10,"0")+" 00000 n \n").join("");
+    out+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    const bytes=new Uint8Array(out.length); for(let i=0;i<out.length;i++) bytes[i]=out.charCodeAt(i)&255;
+    return new Blob([bytes],{type:"application/pdf"});
+  }
+}
+function logoJPEG(){
+  return new Promise(res=>{ if(!S.d.logo) return res(null); const img=new Image();
+    img.onload=()=>{ const c=document.createElement("canvas"); c.width=img.width; c.height=img.height; const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0);
+      res({bin:atob(c.toDataURL("image/jpeg",.92).split(",")[1]),w:c.width,h:c.height}); };
+    img.onerror=()=>res(null); img.src=S.d.logo; });
+}
+async function construirPDF(){
+  const d=S.d, k=d.ritmo||ritmoRecomendado(d), r=RITMOS[k], p=paleta(d), pdf=new MiniPDF(), M=18, ANCHO=174;
+  // Cabecera con el color principal del cliente
+  pdf.rect(0,0,210,34,p.principal);
+  const claro=c=>{const [R,G,B]=hex2rgb(c);return (R*299+G*587+B*114)/1000>150;};
+  const tc=claro(p.principal)?"#1A1E2B":"#FFFFFF";
+  pdf.text(M,13,"RESUMEN DE ALTA · INSTAGRAM",8.5,true,tc);
+  pdf.text(M,24,d.nombre||"Sin nombre",20,true,tc);
+  pdf.text(M,30.5,new Date().toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"})+(d.persona?` · ${d.persona}`:""),9,false,tc);
+  const lg=await logoJPEG();
+  if(lg){ const h=22, w=Math.min(50,h*lg.w/lg.h); pdf.rect(192-w-2,6,w+4,h+4,"#FFFFFF"); pdf.image(lg.bin,lg.w,lg.h,192-w,8,w,h); }
+  pdf.y=44;
+  if(d.actividad) { pdf.para(M,d.actividad,10.5,false,"#5E6577"); pdf.y+=3; }
+  // Plan
+  pdf.ensure(30); const y0=pdf.y; pdf.rect(M,y0,ANCHO,26,"#1A1E2B");
+  pdf.text(M+5,y0+8,`Plan ${r.l}`,13,true,"#FFFFFF");
+  [[r.car,"carruseles/sem"],[r.reels,"reels/sem"],[r.hist==="1 al día"?7:3,"historias/sem"],[tiempoCliente(d)+" min","su tiempo/sem"],[pctPropio(d)+"%","con foto"]]
+    .forEach(([n,l],i)=>{ const x=M+5+i*34; pdf.text(x,y0+17,String(n),14,true,"#FFFFFF"); pdf.text(x,y0+22,l,7.5,false,"#C9CDD8"); });
+  pdf.y=y0+32;
+  // Paleta
+  pdf.text(M,pdf.y,"Paleta",11,true); pdf.y+=3;
+  ["principal","fondo","acento","texto"].forEach((c,i)=>{ const x=M+i*44; pdf.rect(x,pdf.y,10,10,"#DADDE5"); pdf.rect(x+.3,pdf.y+.3,9.4,9.4,p[c]); pdf.text(x+13,pdf.y+4.5,c,8,false,"#5E6577"); pdf.text(x+13,pdf.y+8.5,p[c],9,true); });
+  pdf.y+=18;
+  // Diagnóstico
+  const titulo=t=>{ pdf.ensure(24); pdf.y+=11; pdf.text(M,pdf.y,t,13,true); pdf.y+=2; pdf.line(M,pdf.y,M+ANCHO); pdf.y+=1; };
+  titulo("Cómo lo resolvemos");
+  const col={ok:"#0E6B63",accion:"#9A5B00",bloqueo:"#B42318"}, txt={ok:"RESUELTO",accion:"LO HACEMOS EN EL ALTA",bloqueo:"BLOQUEA"};
+  diagnostico(d).forEach(x=>{ pdf.ensure(18); pdf.y+=5; pdf.rect(M,pdf.y-3.2,1.4,4,col[x.estado]); pdf.text(M+4,pdf.y,x.area,10,true); pdf.text(M+4+anchoPt(x.area,10,true)/MM+3,pdf.y,txt[x.estado],7.5,true,col[x.estado]);
+    pdf.para(M+4,x.situacion,9.5,false,"#5E6577",ANCHO-4); pdf.para(M+4,x.solucion,9.5,false,"#1A1E2B",ANCHO-4); pdf.y+=1; });
+  // Respuestas
+  respuestasPorSeccion().forEach(s=>{ titulo(s.titulo);
+    s.items.forEach(it=>{ pdf.ensure(12); pdf.y+=2; pdf.para(M,it.label,8.5,true,"#5E6577"); pdf.para(M,it.valor||(it.req?"Falta":"Sin responder"),10,false,it.valor?"#1A1E2B":it.req?"#B42318":"#9AA0AE"); }); });
+  // Siguientes pasos
+  titulo("Siguientes pasos");
+  pasosSiguientes(d).forEach((t,i)=>{ pdf.y+=1; pdf.para(M,`${i+1}.  ${t}`,10); });
+  pdf.y+=6; pdf.para(M,`Contacto: ${CONFIG.emailContacto}`,9,false,"#5E6577");
+  return pdf.build();
+}
+async function guardarArchivo(nombre,blob){
+  if(window.self===window.top){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); toast("Descargado: "+nombre); return; }
+  const dl = window.claude&&window.claude.use ? await window.claude.use("downloads") : null;
+  if(!dl){ toast("Aquí no se puede descargar. Abre el archivo del asistente en el navegador."); return; }
+  try{ await dl.save({filename:nombre,data:blob}); toast("Guardado"); }
+  catch(e){ if(e&&e.code==="declined") return; toast(e&&e.code==="rate_limited"?"Espera un momento y vuelve a pulsar":"No se pudo guardar el archivo"); }
+}
+function prepararCompartir(){
+  const b=$("#shareBtn"); if(!b) return;
+  try{ const f=new File(["x"],"a.pdf",{type:"application/pdf"}); b.hidden=!(navigator.canShare&&navigator.canShare({files:[f]})); }catch(e){ b.hidden=true; }
+}
+
+function renderInternal(){
+  const box=$("#internal"); box.hidden=!S.interno; $("#modeBtn").setAttribute("aria-pressed",S.interno);
+  if(!S.interno) return;
+  const d=S.d, id=slug(d.nombre), cl=checklist(), hecho=cl.filter(([k])=>S.cl[id+":"+k]).length;
+  box.innerHTML=`<h2><span class="tag">Interno</span> Ficha de alta · <code>${esc(id)}</code></h2>
+  <p class="h">Solo lo ves tú. Puedes rellenar el asistente en la llamada o cargar la ficha que te ha enviado el cliente.</p>
+  <div class="box"><label class="t" for="imp">Cargar ficha del cliente</label><p class="h">Pega aquí el JSON que te ha enviado, o elige el archivo.</p>
+    <textarea id="imp" placeholder='{"nombre": "…"}'></textarea>
+    <div class="actions"><button class="btn" type="button" id="impBtn">Cargar</button><input type="file" id="impFile" accept="application/json,.json"><button class="btn" type="button" id="demo">Cargar ejemplo (Panadería La Espiga)</button></div>
+    <div class="err" id="impErr" hidden></div></div>
+  <div class="box"><h2>Checklist del alta <span class="h">(${hecho}/${cl.length})</span></h2>
+    <div class="cl">${cl.map(([k,t])=>`<label><input type="checkbox" data-cl="${id+":"+k}" ${S.cl[id+":"+k]?"checked":""}><span>${t}</span></label>`).join("")}</div>
+    <p class="example">Estimación de tu tiempo para el alta: <b>${horasAlta().toLocaleString("es-ES")} h</b> (orientativa; mídelo en el piloto).</p></div>
+  <div class="box"><label class="t" for="notas">Notas internas</label><textarea id="notas" placeholder="Precio acordado, dudas, próxima llamada…">${esc(S.notas)}</textarea></div>
+  <div class="box"><h2>marca.json (borrador)</h2><pre class="json">${esc(JSON.stringify(buildMarca(),null,2))}</pre>
+    <div class="actions"><button class="btn" type="button" data-copy="marca">Copiar marca.json</button><button class="btn" type="button" data-copy="plan">Copiar plan.json</button><button class="btn" type="button" data-copy="respuestas">Copiar respuestas.json</button><button class="btn" type="button" id="dl">Descargar respuestas.json</button></div></div>`;
+}
+
+/* ===== Validación y navegación ===== */
+function validate(){
+  const st=STEPS[S.step]; let ok=true, first=null;
+  (st.fields||[]).filter(visible).forEach(f=>{
+    if(!f.req) return;
+    const v=S.d[f.id]; const empty = v===undefined||v===""||v===false||(Array.isArray(v)&&!v.length)||(typeof v==="string"&&!v.trim());
+    const el=document.querySelector(`[data-field="${f.id}"]`); const er=el&&el.querySelector(".err");
+    if(f.id==="ritmo"&&empty){ S.d.ritmo=ritmoRecomendado(S.d); return; }
+    if(f.id==="estilos"&&empty){ S.d.estilos=estilosRecomendados(S.d); return; }
+    let msg="";
+    if(empty) msg = f.type==="check"?"Marca la casilla para continuar.":"Esta respuesta hace falta para preparar tu alta.";
+    else if(f.type==="email"&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) msg="Revisa el email: parece que le falta algo (ejemplo: nombre@negocio.es).";
+    if(msg){ ok=false; if(er){er.textContent=msg;er.hidden=false;} else if(el){el.insertAdjacentHTML("beforeend",`<div class="err">${msg}</div>`);} if(!first) first=el; }
+    else if(er) er.hidden=true;
+  });
+  if(first) first.scrollIntoView({behavior:"smooth",block:"center"});
+  return ok;
+}
+function go(n){ S.step=Math.max(0,Math.min(STEPS.length-1,n)); render(); window.scrollTo({top:0}); }
+
+/* ===== Utilidades ===== */
+function toast(t){ const el=$("#toast"); el.textContent=t; el.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>el.hidden=true,2200); }
+function copy(text,label){
+  const done=()=>toast(label+" copiado");
+  try{ navigator.clipboard.writeText(text).then(done,()=>fallback()); }catch(e){ fallback(); }
+  function fallback(){ const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select(); let ok=false; try{ok=document.execCommand("copy");}catch(e){} ta.remove(); toast(ok?label+" copiado":"No se pudo copiar: selecciona el texto a mano"); }
+}
+/* ===== Colores desde el logo ===== */
+function rgb2hsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;let h=0,s=0;
+  if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;}return [h,s,l];}
+function hsl2hex(h,s,l){const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return "#"+[f(0),f(8),f(4)].map(x=>Math.round(x*255).toString(16).padStart(2,"0")).join("").toUpperCase();}
+const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const hueDist=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d;};
+function paletaDesdeLogo(img){
+  const s=96,c=document.createElement("canvas");c.width=s;c.height=s;const x=c.getContext("2d");
+  x.drawImage(img,0,0,s,s);const px=x.getImageData(0,0,s,s).data,b={};
+  for(let i=0;i<px.length;i+=4){
+    if(px[i+3]<128) continue;
+    const q=[px[i],px[i+1],px[i+2]].map(v=>Math.min(255,Math.round(v/24)*24));
+    const k=q.join(",");(b[k]=b[k]||{rgb:q,n:0}).n++;
+  }
+  // agrupar y ordenar: ignoramos el blanco del fondo
+  let cols=Object.values(b).map(o=>{const [h,sat,l]=rgb2hsl(...o.rgb);return {...o,h,s:sat,l,hex:"#"+o.rgb.map(v=>v.toString(16).padStart(2,"0")).join("").toUpperCase()};})
+    .filter(o=>o.l<.93).sort((a,b)=>b.n-a.n);
+  if(!cols.length) return null;
+  const total=cols.reduce((t,o)=>t+o.n,0);
+  cols=cols.filter(o=>o.n/total>.01);
+  const vivos=cols.filter(o=>o.s>.18&&o.l>.12&&o.l<.85).sort((a,b)=>b.n*(.4+b.s)-a.n*(.4+a.s));
+  const oscuro=cols.filter(o=>o.l<.25).sort((a,b)=>b.n-a.n)[0];
+  const princ=vivos[0]||cols[0];
+  const acc=vivos.find(o=>hueDist(o.h,princ.h)>35||Math.abs(o.l-princ.l)>.3)||null;
+  const fondo=hsl2hex(princ.h,Math.min(princ.s,.45),.965);
+  const texto=oscuro&&oscuro!==princ?oscuro.hex:hsl2hex(princ.h,Math.min(princ.s,.35),.14);
+  const acento=acc?acc.hex:hsl2hex((princ.h+30)%360,Math.max(.55,princ.s),Math.min(.6,Math.max(.45,princ.l)));
+  const extra=[...new Set(cols.filter(o=>o.l>.08).slice(0,6).map(o=>o.hex))];
+  return {principal:princ.hex,fondo,acento,texto,extra};
+}
+function updatePreview(){
+  const box=$("#mosaicBox"); if(box){const t=document.createElement("div");t.innerHTML=fieldHTML({id:"_mosaico",type:"mosaic",conFotos:!!document.querySelector('[data-field="estilos"]')});box.replaceWith(t.querySelector("#mosaicBox"));}
+  const c=S.d.colores||{}; ["principal","fondo","acento","texto"].forEach(k=>{
+    const sw=document.querySelector(`[data-sw="${k}"]`), ci=document.querySelector(`[data-color="${k}"]`), hx=document.querySelector(`[data-hex="${k}"]`);
+    if(!c[k]) return; if(sw) sw.style.background=c[k]; if(ci&&ci.value.toUpperCase()!==c[k].toUpperCase()) ci.value=c[k];
+    if(hx&&document.activeElement!==hx) hx.value=c[k].toUpperCase();
+  });
+}
+const DEMO={nombre:"Panadería La Espiga",sector:"restauracion",actividad:"Pan de masa madre y bollería artesana en Ruzafa",zona:"local",estrella:"Hogaza de masa madre, croissant de mantequilla, coca de llanda",diferencia:"Fermentación de 24 h y harina ecológica de molinos valencianos",tieneIG:"si_abandonada",usuario:"@laespiga.demo",tipoCuenta:"personal",seguidores:"300-1000",paginaFB:"no",quienAcceso:"yo",franja:["mananas"],okConexion:true,clienteIdeal:"Familias del barrio de 30–45 años que buscan pan de calidad",preguntas:"¿Tenéis pan sin gluten? ¿Hasta qué hora hay hogaza?",mitos:"El pan engorda; el pan congelado pierde todo",fechas:"Fallas, Pascua (mona), Navidad",tieneLogo:"no",tieneColores:"no",tipografia:"proponed",tono:["cercano","divertido"],trato:"tu",emojis:"pocos",objetivo:"reservas",cta:"whatsapp",tiempo:"15",fotos:"algunas",fotosNuevas:"semana",videos:"alguno",preferencia:"mezcla",ritmo:"estandar",aprobacion:"primera",persona:"Marta",email:"marta@laespiga.demo",okDatos:true};
+
+/* ===== Eventos ===== */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-choice],[data-multi]"); if(!t) return;
+  if(t.id==="next"){ if(S.step===0||validate()) go(S.step+1); return; }
+  if(t.id==="prev"){ go(S.step-1); return; }
+  if(t.id==="reset"){ S.d={}; S.step=0; render(); toast("Respuestas borradas"); return; }
+  if(t.id==="modeBtn"){ S.interno=!S.interno; render(); if(S.interno) $("#internal").scrollIntoView({behavior:"smooth"}); return; }
+  if(t.dataset.usecolor){ S.d.colores={...(S.d.colores||paleta(S.d)),principal:t.dataset.usecolor}; save(); updatePreview(); toast("Color principal cambiado"); return; }
+  if(t.dataset.choice){ S.d[t.dataset.choice]=t.dataset.v;
+    if(t.dataset.choice==="tieneColores"&&t.dataset.v==="logo"&&S.d.logoPaleta&&S.d.logoPaleta.principal){ const {extra,...c}=S.d.logoPaleta; S.d.colores=c; } const y=window.scrollY; render(); window.scrollTo({top:y}); return; }
+  if(t.dataset.multi){ const k=t.dataset.multi, f=STEPS[S.step].fields.find(f=>f.id===k); let a=S.d[k]||[];
+    a=a.includes(t.dataset.v)?a.filter(x=>x!==t.dataset.v):[...a,t.dataset.v]; if(f&&f.max&&a.length>f.max) a=a.slice(-f.max);
+    S.d[k]=a; const y=window.scrollY; render(); window.scrollTo({top:y}); return; }
+  if(t.dataset.copy){ const w=t.dataset.copy;
+    if(w==="resumen") copy(resumenTexto(),"Resumen");
+    if(w==="respuestas") copy(JSON.stringify(buildRespuestas(),null,2),"Ficha");
+    if(w==="marca") copy(JSON.stringify(buildMarca(),null,2),"marca.json");
+    if(w==="plan") copy(JSON.stringify(buildPlan(),null,2),"plan.json");
+    if(w==="email") copy(CONFIG.emailContacto,"Email");
+    return; }
+  if(t.id==="dl"){ guardarArchivo(`respuestas_${slug(S.d.nombre)}.json`,new Blob([JSON.stringify(buildRespuestas(),null,2)],{type:"application/json"})); return; }
+  if(t.id==="pdfBtn"){ t.disabled=true; construirPDF().then(b=>guardarArchivo(nombreArchivo("pdf"),b)).catch(()=>toast("No se pudo crear el PDF")).finally(()=>t.disabled=false); return; }
+  if(t.id==="shareBtn"){ construirPDF().then(b=>{ const f=new File([b],nombreArchivo("pdf"),{type:"application/pdf"}); return navigator.share({files:[f],title:"Resumen de alta",text:"Resumen de alta de "+(S.d.nombre||"")}); }).catch(e=>{ if(e&&e.name!=="AbortError") toast("No se pudo compartir; descarga el PDF y adjúntalo"); }); return; }
+  if(t.dataset.goto){ go(+t.dataset.goto); return; }
+  if(t.id==="nuevo"){ $("#nuevoConfirm").hidden=false; $("#nuevoConfirm").scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  if(t.id==="nuevoNo"){ $("#nuevoConfirm").hidden=true; return; }
+  if(t.id==="nuevoOk"){ S.d={}; go(1); toast("Listo para un nuevo negocio"); return; }
+  if(t.id==="impBtn"){ loadJSON($("#imp").value); return; }
+  if(t.id==="demo"){ S.d=JSON.parse(JSON.stringify(DEMO)); S.step=STEPS.length-1; render(); toast("Ejemplo cargado"); return; }
+});
+function loadJSON(txt){
+  const er=$("#impErr");
+  try{ const o=JSON.parse(txt); delete o._meta; delete o.paleta; delete o._marca; delete o._plan; delete o._diagnostico; if(Array.isArray(o.logoPaleta)) o.logoPaleta={extra:o.logoPaleta}; S.d=o; S.step=STEPS.length-1; render(); toast("Ficha cargada"); }
+  catch(e){ er.textContent="No es un JSON válido. Pega la ficha completa, desde la primera { hasta la última }."; er.hidden=false; }
+}
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset.k){ S.d[t.dataset.k]=t.value; save(); if(S.interno&&t.dataset.k==="nombre") renderInternal(); return; }
+  if(t.dataset.color){ S.d.colores={...(S.d.colores||paleta(S.d))}; S.d.colores[t.dataset.color]=t.value.toUpperCase(); save(); updatePreview(); return; }
+  if(t.dataset.hex){ let v=t.value.trim(); if(v&&v[0]!=="#") v="#"+v; const ok=/^#[0-9a-fA-F]{6}$/.test(v); t.classList.toggle("bad",!ok&&v.length>=7);
+    if(ok){ S.d.colores={...(S.d.colores||paleta(S.d))}; S.d.colores[t.dataset.hex]=v.toUpperCase(); save(); updatePreview(); } return; }
+  if(t.id==="notas"){ S.notas=t.value; save(); }
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset.check){ S.d[t.dataset.check]=t.checked; save(); return; }
+  if(t.dataset.hex){ updatePreview(); t.value=(S.d.colores||{})[t.dataset.hex]||t.value; t.classList.remove("bad"); return; }
+  if(t.dataset.cl){ S.cl[t.dataset.cl]=t.checked; save(); renderInternal(); return; }
+  if(t.id==="impFile"&&t.files[0]){ const r=new FileReader(); r.onload=()=>loadJSON(r.result); r.readAsText(t.files[0]); return; }
+  if(t.dataset.file&&t.files[0]){
+    const file=t.files[0], r=new FileReader();
+    r.onload=()=>{ const img=new Image(); img.onload=()=>{
+      const m=400, sc=Math.min(1,m/Math.max(img.width,img.height)), c=document.createElement("canvas");
+      c.width=Math.round(img.width*sc)||m; c.height=Math.round(img.height*sc)||m; c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      S.d.logo=c.toDataURL("image/png"); let pal=null; try{ pal=paletaDesdeLogo(c); }catch(e){}
+      if(pal){ S.d.logoPaleta=pal; if(S.d.tieneColores!=="si"){ const {extra,...cc}=pal; S.d.tieneColores="logo"; S.d.colores=cc; } }
+      const y=window.scrollY; render(); window.scrollTo({top:y}); toast(pal?"Logo cargado: colores tomados del logo":"Logo cargado"); };
+      img.src=r.result; };
+    r.readAsDataURL(file);
+  }
+});
+render();
+</script>
+</body></html>

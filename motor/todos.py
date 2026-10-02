@@ -1,7 +1,12 @@
 """Ejecuta un comando del motor para todos los clientes (lo usan los workflows de GitHub).
 
 Uso:
-  python motor/todos.py publicar [--simular] [--cliente <id>]   publica lo que toca (máx. 1 por cliente y pasada)
+  python motor/todos.py publicar [--simular] [--cliente <id>] [--commit]
+                                                                 publica lo que toca (máx. 1 por cliente y pasada);
+                                                                 --commit: commit + push de published.json tras cada cliente
+  python motor/todos.py pendiente [--cliente <id>]               «si»/«no»: ¿algún cliente activo tiene algo que publicar ya?
+                                                                 (solo librería estándar: va antes de instalar nada)
+  python motor/todos.py latido [--cliente <id>] [--out F]        lo que debía salir hace >30 min y no está en published.json
   python motor/todos.py siguiente --cliente <id>                 publica YA la siguiente de un cliente (prueba)
   python motor/todos.py hay-reels                                 «si» si algún cliente tiene un reel a punto (para instalar ffmpeg)
   python motor/todos.py diario --dir CARPETA [--informe]          comentarios y métricas de cada cliente → CARPETA/<id>_*.md
@@ -80,31 +85,98 @@ def run(cid, script, *args, check=False):
     return r.returncode
 
 
+def guardar_registro(cid: str) -> None:
+    """Commit + push del registro de un cliente justo después de publicar (si otra ejecución arranca, ya lo ve)."""
+    rutas = [f"clientes/{cid}/content/{f}" for f in ("published.json", "reprogramados.json")
+             if (CLIENTES / cid / "content" / f).exists()]
+    if not rutas:
+        return
+    g = lambda *x: subprocess.run(["git", *x], cwd=ROOT, capture_output=True, text=True)
+    g("add", *rutas)
+    if g("diff", "--cached", "--quiet").returncode == 0:
+        return
+    g("commit", "-m", f"Publicado · {cid} [skip ci]")
+    for intento in range(3):
+        if g("pull", "--rebase", "-q").returncode == 0 and g("push", "-q").returncode == 0:
+            print(f"  [{cid}] registro guardado en GitHub")
+            return
+    print(f"  [{cid}] ⚠ no se pudo subir el registro (se reintenta al final de la ejecución)")
+
+
 def cmd_publicar(a):
     fallos = 0
     for cid, _ in clientes(ensayo=a.simular, solo=a.cliente):
         print(f"→ {cid}")
         run(cid, "render.py")
         fallos += run(cid, "publish.py", "run", "--max", "1", *(["--dry-run"] if a.simular else [])) != 0
+        if a.commit and not a.simular:
+            guardar_registro(cid)
     if fallos:
         sys.exit(f"{fallos} cliente(s) con errores al publicar")
 
 
 def cmd_siguiente(a):
     run(a.cliente, "render.py")
-    sys.exit(run(a.cliente, "publish.py", "next"))
+    rc = run(a.cliente, "publish.py", "next")
+    if a.commit:
+        guardar_registro(a.cliente)
+    sys.exit(rc)
+
+
+def calendario(cid: str) -> list[dict]:
+    """Entradas sin publicar del cliente con su hora efectiva (reprogramados.json) y si están bloqueadas
+    por una tanda pendiente de aprobación. Solo librería estándar."""
+    d = CLIENTES / cid / "content"
+    cal = _load(d / "content_calendar.json", {"posts": []}).get("posts", [])
+    pub = _load(d / "published.json", {})
+    rep = _load(d / "reprogramados.json", {})
+    bloq = {pid for v in _load(d / "tandas.json", {}).values() if isinstance(v, dict) and v.get("estado") == "pendiente"
+            for pid in v.get("posts", [])}
+    out = []
+    for e in cal:
+        if e["id"] in pub or e.get("skip"):
+            continue
+        h = (rep.get(e["id"]) or {}).get("publish_at") or e["publish_at"]
+        out.append({**e, "publish_at": h, "cuando": datetime.fromisoformat(h), "bloqueada": e["id"] in bloq})
+    return out
 
 
 def cmd_hay_reels(a):
     ahora = datetime.now(MADRID).replace(tzinfo=None)
     for cid, _ in clientes(ensayo=True):
-        cal = _load(CLIENTES / cid / "content" / "content_calendar.json", {"posts": []})["posts"]
-        pub = _load(CLIENTES / cid / "content" / "published.json", {})
-        for e in cal:
-            if e["type"] == "reel" and e["id"] not in pub and datetime.fromisoformat(e["publish_at"]) <= ahora + timedelta(minutes=40):
+        for e in calendario(cid):
+            if e["type"] == "reel" and not e["bloqueada"] and e["cuando"] <= ahora + timedelta(minutes=40):
                 print("si")
                 return
     print("no")
+
+
+def cmd_pendiente(a):
+    """Primer paso de publicar.yml: si no hay nada que publicar, la ejecución termina en segundos."""
+    ahora = datetime.now(MADRID).replace(tzinfo=None)
+    hay = []
+    for cid, _ in clientes(solo=a.cliente):
+        due = [e for e in calendario(cid) if not e["bloqueada"] and e["cuando"] <= ahora]
+        if due:
+            hay.append(f"{cid}: {len(due)} ({due[0]['id']} · {due[0]['publish_at']})")
+    print("\n".join(hay) or "Nada pendiente en ningún cliente activo.", file=sys.stderr)
+    print("si" if hay else "no")
+
+
+def cmd_latido(a):
+    """Comprobación diaria: lo que debía haber salido hace más de 30 min y no está en published.json."""
+    ahora = datetime.now(MADRID).replace(tzinfo=None)
+    L = []
+    for cid, _ in clientes(solo=a.cliente):
+        for e in calendario(cid):
+            if e["cuando"] <= ahora - timedelta(minutes=a.minutos):
+                nota = " · bloqueada: tanda pendiente de aprobación" if e["bloqueada"] else ""
+                L.append(f"- **{cid}** · `{e['id']}` ({e['type']}) debía salir el {e['publish_at'].replace('T', ' ')}{nota}")
+    txt = ("Publicaciones que debían haber salido y no están en `published.json`:\n\n" + "\n".join(L) +
+           "\n\nRevisa la última ejecución de «Publicar en Instagram» y el lanzador de cron-job.org.\n") if L else ""
+    if a.out:
+        Path(a.out).write_text(txt, encoding="utf-8")
+    print(txt or "Latido OK: no falta nada por publicar.")
 
 
 def cmd_diario(a):
@@ -145,6 +217,7 @@ def cmd_horarios(a):
     hs = horas_madrid()
     bloque = "\n".join(cron_lines(hs))
     print(f"Horas de publicación (Madrid): {', '.join(hs)}")
+    print(f"  → El lanzador de cron-job.org debe dispararse a estas horas (Europe/Madrid): {', '.join(hs)}")
     print(bloque)
     if a.escribir:
         if not WF.exists():
@@ -201,8 +274,13 @@ def cmd_secretos(a):
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("publicar"); s.add_argument("--simular", action="store_true"); s.add_argument("--cliente"); s.set_defaults(fn=cmd_publicar)
-    s = sub.add_parser("siguiente"); s.add_argument("--cliente", required=True); s.set_defaults(fn=cmd_siguiente)
+    s = sub.add_parser("publicar"); s.add_argument("--simular", action="store_true"); s.add_argument("--cliente")
+    s.add_argument("--commit", action="store_true"); s.set_defaults(fn=cmd_publicar)
+    s = sub.add_parser("pendiente"); s.add_argument("--cliente"); s.set_defaults(fn=cmd_pendiente)
+    s = sub.add_parser("latido"); s.add_argument("--cliente"); s.add_argument("--out"); s.add_argument("--minutos", type=int, default=30)
+    s.set_defaults(fn=cmd_latido)
+    s = sub.add_parser("siguiente"); s.add_argument("--cliente", required=True); s.add_argument("--commit", action="store_true")
+    s.set_defaults(fn=cmd_siguiente)
     sub.add_parser("hay-reels").set_defaults(fn=cmd_hay_reels)
     s = sub.add_parser("diario"); s.add_argument("--dir", required=True); s.add_argument("--informe", action="store_true"); s.set_defaults(fn=cmd_diario)
     s = sub.add_parser("horarios"); s.add_argument("--escribir", action="store_true"); s.set_defaults(fn=cmd_horarios)

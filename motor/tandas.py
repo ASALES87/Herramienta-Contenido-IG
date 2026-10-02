@@ -8,11 +8,15 @@ Uso (desde la carpeta del repo; no lleva --cliente salvo donde se indica):
   python motor/tandas.py vencidas                 aprueba las tandas pendientes con más de PLAZO días (lo que no se
                                                   comenta en 3 días se publica tal cual)
   python motor/tandas.py avisos --out avisos.md   texto para el aviso de GitHub si a alguien se le acaba el contenido
+  python motor/tandas.py rehacer --cliente <id>   tras aplicar los cambios que pidió el cliente: rehace imágenes, perfil
+                                                  y cuaderno, y vuelve a dejar la tanda en revisión (3 días más)
 
 Qué clientes cuentan: los activos (plan.json → "activo": true) y los de ensayo ("ensayo": true).
 Registro de cada cliente en content/tandas.json:
   {"t2611": {"estado": "pendiente"|"aprobada", "creada": fecha, "aprobada": fecha, "desde", "hasta", "posts": [ids], "pdf"}}
 Mientras una tanda está pendiente, publish.py no publica nada de ella (ver content_calendar.bloqueados()).
+Si el cliente pide cambios (panel → vista del cliente), la tanda guarda "cambios": [{"n", "id", "texto", "fecha"}] y
+"cambios_pedidos": fecha; no se aprueba sola hasta que se apliquen (tandas.py rehacer).
 """
 from __future__ import annotations
 
@@ -60,12 +64,15 @@ def estado_cliente(cid, d, plan, hoy=None):
     tandas = _load(d / "content" / "tandas.json", {})
     pendientes = [t for t, v in tandas.items() if v.get("estado") == "pendiente"]
     sin_programar = [p["id"] for p in posts if p["id"] not in programados]
+    cambios = {t: len(v.get("cambios", [])) for t, v in tandas.items()
+               if v.get("cambios_pedidos") and not v.get("cambios_hechos")}
     return {"cliente": cid, "activo": bool(plan.get("activo")), "ensayo": bool(plan.get("ensayo")),
             "contenido_hasta": fin.isoformat() if fin else None, "dias_quedan": max(0, quedan), "minimo": minimo,
             "necesita_tanda": quedan < minimo and not pendientes and not sin_programar,
             "posts_sin_programar": len(sin_programar), "tandas_pendientes": pendientes,
             "dias_por_tanda": (plan.get("tanda") or {}).get("dias_por_tanda", 35),
-            "aprobacion": plan.get("aprobacion", "primera"), "guia": f"clientes/{cid}/content/GUIA_TANDAS.md"}
+            "aprobacion": plan.get("aprobacion", "primera"), "guia": f"clientes/{cid}/content/GUIA_TANDAS.md",
+            "cambios_por_hacer": cambios}
 
 
 def cmd_estado(a):
@@ -135,6 +142,26 @@ def cmd_aprobar(a):
     _save(p, tandas)
 
 
+def cmd_rehacer(a):
+    d = CLIENTES / a.cliente
+    p = d / "content" / "tandas.json"
+    tandas = _load(p, {})
+    abiertas = [t for t, v in tandas.items() if v.get("cambios_pedidos") and not v.get("cambios_hechos")]
+    objetivo = [a.tanda] if a.tanda else abiertas
+    if not objetivo:
+        raise SystemExit("No hay tandas con cambios pedidos.")
+    for t in objetivo:
+        v = tandas[t]
+        ids = [i for i in v["posts"] if not i.startswith(("f-", "r-"))]
+        _run(a.cliente, "render.py", "--force", *ids)
+        _run(a.cliente, "perfil.py", "15")
+        _run(a.cliente, "revision.py", "--desde", v["desde"], "--hasta", v["hasta"])
+        hoy = date.today().isoformat()
+        v.update(cambios_hechos=hoy, revision=hoy, estado="pendiente", aprobada=None)
+        print(f"✓ {a.cliente}: tanda {t} rehecha con {len(v.get('cambios', []))} cambio(s); vuelve a revisión ({PLAZO} días)")
+    _save(p, tandas)
+
+
 def cmd_vencidas(a):
     hoy = date.today()
     for cid, d, _ in clientes(todos=True):
@@ -142,7 +169,9 @@ def cmd_vencidas(a):
         tandas = _load(p, {})
         cambio = False
         for t, v in tandas.items():
-            if v.get("estado") == "pendiente" and (hoy - date.fromisoformat(v["creada"])).days >= PLAZO:
+            if v.get("cambios_pedidos") and not v.get("cambios_hechos"):
+                continue   # el cliente pidió cambios: no se aprueba sola hasta aplicarlos
+            if v.get("estado") == "pendiente" and (hoy - date.fromisoformat(v.get("revision") or v["creada"])).days >= PLAZO:
                 v.update(estado="aprobada", aprobada=hoy.isoformat(), nota=f"aprobada sola tras {PLAZO} días sin comentarios")
                 cambio = True
                 print(f"✓ {cid}: tanda {t} aprobada sola (sin comentarios en {PLAZO} días)")
@@ -160,6 +189,8 @@ def cmd_avisos(a):
                      f"La tarea de tandas no lo ha cubierto: revísala o escribe la tanda a mano.")
         for t in f["tandas_pendientes"]:
             L.append(f"- **{f['cliente']}**: la tanda {t} sigue pendiente de aprobación.")
+        for t, n in f.get("cambios_por_hacer", {}).items():
+            L.append(f"- **{f['cliente']}**: ha pedido {n} cambio(s) en la tanda {t}. Aplícalos y ejecuta `tandas.py rehacer`.")
     if L and a.out:
         Path(a.out).write_text("\n".join(["Contenido que necesita atención:", ""] + L) + "\n", encoding="utf-8")
     print("\n".join(L) or "Todo en orden.")
@@ -173,6 +204,7 @@ def main():
     s = sub.add_parser("cerrar"); s.add_argument("--cliente", required=True); s.add_argument("--tanda"); s.set_defaults(fn=cmd_cerrar)
     s = sub.add_parser("aprobar"); s.add_argument("--cliente", required=True); s.add_argument("tanda", nargs="?"); s.set_defaults(fn=cmd_aprobar)
     s = sub.add_parser("vencidas"); s.set_defaults(fn=cmd_vencidas)
+    s = sub.add_parser("rehacer"); s.add_argument("--cliente", required=True); s.add_argument("tanda", nargs="?"); s.set_defaults(fn=cmd_rehacer)
     s = sub.add_parser("avisos"); s.add_argument("--out"); s.add_argument("--hoy"); s.set_defaults(fn=cmd_avisos)
     a = ap.parse_args()
     a.fn(a)
