@@ -1,0 +1,45 @@
+name: Prueba automática (simulación)
+
+# Se lanza solo cada vez que subes cambios del motor, del alta o de los clientes:
+#  1) prueba completa del motor con un cliente ficticio (pruebas/prueba_motor.py);
+#  2) simulación de publicación de todos los clientes activos y de ensayo (no publica nada en Instagram).
+# Si algo falla, GitHub te avisa por email (ejecución en rojo).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "motor/**"
+      - "alta/**"
+      - "clientes/**"
+      - "pruebas/**"
+      - "requirements.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prueba
+  cancel-in-progress: true
+
+jobs:
+  prueba:
+    # no se lanza con los commits automáticos del bot (publicados, métricas…)
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Prueba completa del motor (cliente ficticio)
+        run: python pruebas/prueba_motor.py
+      - name: Simulación de publicación (todos los clientes de ensayo y activos)
+        env:
+          SECRETOS: ${{ toJSON(secrets) }}
+        run: python motor/todos.py publicar --simular
+      - name: Estado del contenido
+        run: python motor/tandas.py estado
